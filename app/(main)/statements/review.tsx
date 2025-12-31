@@ -21,12 +21,68 @@ export default function StatementReviewScreen() {
   const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1c1c1c' }, 'background');
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
 
-  // Parse the data
-  const timeData = time ? JSON.parse(time as string) : null;
-  const locationData = location ? JSON.parse(location as string) : null;
-  const vehicleData = vehicle ? JSON.parse(vehicle as string) : null;
-  const partiesData = parties ? JSON.parse(parties as string) : [];
-  const circumstancesData = circumstances ? JSON.parse(circumstances as string) : null;
+  // Mapping from circumstance IDs to translation keys
+  const circumstanceTranslationMap: Record<string, string> = {
+    'rear_collision': 'rearCollision',
+    'side_collision': 'sideCollision', 
+    'front_collision': 'frontCollision',
+    'parking_incident': 'parkingIncident',
+    'single_vehicle': 'singleVehicle',
+    'pedestrian_incident': 'pedestrianIncident',
+    'property_damage': 'propertyDamage',
+    'other': 'other'
+  };
+
+  // Parse the data with error handling
+  let timeData = null;
+  let locationData = null;
+  let vehicleData = null;
+  let partiesData: any[] = [];
+  let circumstancesData = null;
+
+  // Time is passed as a simple ISO string, not JSON
+  try {
+    if (time && typeof time === 'string') {
+      // If it looks like JSON (starts with {), parse it as JSON
+      if (time.startsWith('{')) {
+        timeData = JSON.parse(time as string);
+      } else {
+        // Otherwise, treat it as an ISO string
+        timeData = { selectedDateTime: time, isRecentEvent: false };
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing time data:', error);
+    timeData = { selectedDateTime: time, isRecentEvent: false };
+  }
+
+  try {
+    locationData = location ? JSON.parse(location as string) : null;
+  } catch (error) {
+    console.error('Error parsing location data:', error);
+    locationData = null;
+  }
+
+  try {
+    vehicleData = vehicle ? JSON.parse(vehicle as string) : null;
+  } catch (error) {
+    console.error('Error parsing vehicle data:', error);
+    vehicleData = null;
+  }
+
+  try {
+    partiesData = parties ? JSON.parse(parties as string) : [];
+  } catch (error) {
+    console.error('Error parsing parties data:', error);
+    partiesData = [];
+  }
+
+  try {
+    circumstancesData = circumstances ? JSON.parse(circumstances as string) : null;
+  } catch (error) {
+    console.error('Error parsing circumstances data:', error);
+    circumstancesData = null;
+  }
 
   const handleEdit = (section: string) => {
     Alert.alert(
@@ -64,15 +120,52 @@ export default function StatementReviewScreen() {
     setIsSubmitting(true);
     
     try {
+      // Validate required data
+      if (!vehicleData) {
+        Alert.alert(
+          t('statementReview.error') || 'Error',
+          'Vehicle information is required',
+          [{ text: t('common.ok') || 'OK' }]
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!circumstancesData?.description) {
+        Alert.alert(
+          t('statementReview.error') || 'Error', 
+          'Description is required',
+          [{ text: t('common.ok') || 'OK' }]
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create the statement object
       const statement: ClaimStatement = {
         id: `statement_${Date.now()}`,
         status: 'draft' as const,
         type: 'accident' as const,
         incidentDate: timeData?.selectedDateTime ? new Date(timeData.selectedDateTime).getTime() : Date.now(),
-        description: circumstancesData?.description || '',
-        location: locationData || { latitude: 0, longitude: 0, timestamp: Date.now() },
-        vehicle: vehicleData,
+        description: circumstancesData.description,
+        location: locationData || { 
+          latitude: 0, 
+          longitude: 0, 
+          timestamp: Date.now(),
+          address: 'Unknown location'
+        },
+        vehicle: {
+          id: vehicleData.id || Date.now().toString(),
+          make: vehicleData.make || '',
+          model: vehicleData.model || '',
+          year: vehicleData.year || 2024,
+          licensePlate: vehicleData.licensePlate || '',
+          vin: vehicleData.vin || '',
+          color: vehicleData.color || '',
+          fuelType: vehicleData.fuelType || 'gasoline',
+          insuranceCompany: vehicleData.insuranceCompany || '',
+          policyNumber: vehicleData.policyNumber || ''
+        },
         damages: [],
         photos: [], // Will be added from camera store if needed
         isEmergencyServicesInvolved: false,
@@ -80,8 +173,10 @@ export default function StatementReviewScreen() {
         updatedAt: Date.now(),
       };
 
+      console.log('Creating statement:', statement);
+
       // Add to statements store
-      addStatement(statement);
+      await addStatement(statement);
 
       Alert.alert(
         t('statementReview.success') || 'Success',
@@ -100,9 +195,9 @@ export default function StatementReviewScreen() {
     } catch (error) {
       console.error('Error creating statement:', error);
       Alert.alert(
-        t('statementReview.error'),
-        String(t('statementReview.errorCreating')),
-        [{ text: String(t('common.ok')) }]
+        t('statementReview.error') || 'Error',
+        String(t('statementReview.errorCreating')) || 'Failed to create statement. Please try again.',
+        [{ text: String(t('common.ok')) || 'OK' }]
       );
     } finally {
       setIsSubmitting(false);
@@ -239,7 +334,7 @@ export default function StatementReviewScreen() {
             (
               <View>
                 <ThemedText style={styles.infoText}>
-                  {t('statementReview.type')}: {circumstancesData?.type ? t(`statementCircumstances.${circumstancesData.type}`) : t('statementReview.notSpecified')}
+                  {t('statementReview.type')}: {circumstancesData?.type ? t(`statementCircumstances.${circumstanceTranslationMap[circumstancesData.type] || circumstancesData.type}`) : t('statementReview.notSpecified')}
                 </ThemedText>
                 
                 {circumstancesData?.weather && circumstancesData.weather.length > 0 && (

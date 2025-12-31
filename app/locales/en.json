@@ -1,4 +1,7 @@
 {
+  "_": {
+    "incomplete": "Incomplete Data"
+  },
   "common": {
     "yes": "Yes",
     "no": "No",
@@ -10,6 +13,7 @@
     "edit": "Edit",
     "add": "Add",
     "remove": "Remove",
+    "select": "Select",
     "submit": "Submit",
     "confirm": "Confirm",
     "continue": "Continue",
@@ -26,6 +30,7 @@
     "info": "Information",
     "fillAllFields": "Please fill all required fields",
     "tryAgain": "Please try again",
+    "grant": "Grant",
     "editVehicle": "Edit Vehicle"
   },
   "tabs": {
@@ -77,6 +82,7 @@
     "title": "My Vehicles",
     "noVehicles": "No vehicles found",
     "noVehiclesSubtitle": "Add your first vehicle to get started",
+    "noVehiclesForSelection": "No vehicles available to select. Please add a vehicle first from the vehicles screen.",
     "addVehicle": "Add Vehicle",
     "make": "Make",
     "model": "Model",
@@ -84,6 +90,7 @@
     "licensePlate": "License Plate",
     "vin": "VIN",
     "color": "Color",
+    "selectVehicle": "Select Vehicle",
     "deleteConfirmTitle": "Delete Vehicle",
     "deleteConfirmMessage": "Are you sure you want to delete this vehicle?",
     "validationRequired": "This field is required",
@@ -96,10 +103,17 @@
     "newStatement": "New Statement",
     "noStatements": "No statements found",
     "noStatementsSubtitle": "Create your first claim statement",
+    "createFirstStatement": "Create your first claim statement",
+    "createNew": "Create New",
+    "myStatements": "My Statements",
+    "total": "statements",
+    "type": "Type",
+    "date": "Date",
+    "location": "Location",
+    "updated": "Last updated",
     "selectVehicle": "Select Vehicle",
     "incidentDate": "Incident Date",
     "incidentTime": "Incident Time",
-    "location": "Location",
     "description": "Description",
     "photos": "Photos",
     "addPhoto": "Add Photo",
@@ -112,7 +126,29 @@
     "validationDescription": "Please enter a description",
     "saveSuccess": "Statement saved successfully",
     "submitSuccess": "Statement submitted successfully",
-    "deleteSuccess": "Statement deleted successfully"
+    "deleteSuccess": "Statement deleted successfully",
+    "statementDetails": "Statement Details",
+    "statementNotFound": "Statement not found",
+    "deleteStatement": "Delete Statement",
+    "deleteConfirmation": "Are you sure you want to delete this statement? This action cannot be undone.",
+    "cannotEdit": "Cannot Edit",
+    "cannotEditSubmitted": "This statement has already been submitted and cannot be edited.",
+    "submitStatement": "Submit Statement",
+    "submitConfirmation": "Are you sure you want to submit this statement? Once submitted, it cannot be edited.",
+    "submit": "Submit",
+    "vehicleInfo": "Vehicle Information",
+    "incidentInfo": "Incident Information",
+    "damages": "Damages",
+    "timeline": "Timeline",
+    "created": "Created",
+    "submitted": "Submitted"
+  },
+  "statementType": {
+    "accident": "Accident",
+    "theft": "Theft",
+    "damage": "Damage",
+    "vandalism": "Vandalism",
+    "other": "Other"
   },
   "statementStatus": {
     "draft": "Draft",
@@ -129,19 +165,26 @@
     "usePhoto": "Use Photo",
     "permissionTitle": "Camera Permission",
     "permissionMessage": "We need access to your camera to take photos for your claim.",
+    "permissionDescription": "Camera access is required to take photos for documentation",
     "permissionDenied": "Camera permission denied",
     "photoSaved": "Photo saved successfully",
+    "photoSavedDescription": "Your photo has been saved successfully",
+    "takeAnother": "Take Another",
     "error": "Camera Error",
     "errorDescription": "Failed to access camera",
-    "errorTakingPhoto": "Failed to capture photo"
+    "errorTakingPhoto": "Failed to capture photo",
+    "id": "ID Document",
+    "idMessage": "Take a photo of your ID document",
+    "drivingLicense": "Driving License",
+    "licenseMessage": "Take a photo of your driving license",
+    "registration": "Vehicle Registration",
+    "registrationMessage": "Take a photo of your vehicle registration document"
   },
   "damage": {
     "title": "Damage Assessment",
     "instructions": "Take photos of the damage from multiple angles",
     "frontView": "Front View",
     "rearView": "Rear View", 
-    "leftSide": "Left Side",
-    "rightSide": "Right Side",
     "closeUp": "Close-up",
     "overview": "Overview",
     "addPhoto": "Add Photo",
@@ -163,7 +206,28 @@
     "needMorePhotos": "Please take at least 3 photos to complete the assessment",
     "completeAssessment": "Complete Assessment",
     "assessmentCompleteMsg": "Are you sure you want to complete the damage assessment? This will finalize your documentation.",
-    "instructionsText": "Document all damage to your vehicle by taking clear photos. Start with general overview photos, then focus on specific damage areas, and finally photograph any relevant documents."
+    "instructionsText": "Document all damage to your vehicle by taking clear photos. Start with general overview photos, then focus on specific damage areas, and finally photograph any relevant documents.",
+    "documentsInstructions": "Take clear photos of required documents",
+    "selectDamageAreas": "Select Damage Areas",
+    "selectAreasInstructions": "Tap on damaged areas of the vehicle",
+    "tapAreasToSelect": "Tap the red circles to select damaged areas",
+    "selectedAreas": "Selected Areas",
+    "continueToPhotos": "Continue to Photos",
+    "selectAreas": "Select Areas",
+    "selectAreasDescription": "Please select at least one damaged area",
+    "generalInstructions": "Take photos from all sides of the vehicle (front, rear, left, right, etc.)",
+    "damageInstructions": "Take close-up photos of all damaged areas",
+    "front": "Front",
+    "rear": "Rear",
+    "leftSide": "Left Side",
+    "rightSide": "Right Side",
+    "roof": "Roof",
+    "frontLeft": "Front Left",
+    "frontRight": "Front Right",
+    "rearLeft": "Rear Left",
+    "rearRight": "Rear Right",
+    "photosRequired": "Photos Required",
+    "photosRequiredDescription": "You'll need to take photos for {{count}} selected area(s)"
   },
   "statementFirstScreen": {
     "title": "Did the event occur recently?",
@@ -279,6 +343,16 @@
     "sideCollisionDesc": "Vehicle was hit from the side",
     "frontCollision": "Front Collision",
     "frontCollisionDesc": "Vehicle hit something in front",
+    "parkingIncident": "Parking Incident",
+    "parkingIncidentDesc": "Incident occurred while parking or parked",
+    "singleVehicle": "Single Vehicle",
+    "singleVehicleDesc": "Single vehicle accident (hit object, rolled over, etc.)",
+    "pedestrianIncident": "Pedestrian Incident",
+    "pedestrianIncidentDesc": "Collision involving a pedestrian",
+    "propertyDamage": "Property Damage",
+    "propertyDamageDesc": "Damage to buildings, fences, or other property",
+    "other": "Other",
+    "otherDesc": "Other type of incident not listed above",
     "weatherConditions": "Weather Conditions",
     "roadConditions": "Road Conditions",
     "approximateSpeed": "Approximate Speed (km/h)",
@@ -289,6 +363,65 @@
     "selectCircumstanceRequired": "Please select what happened during the incident.",
     "noDescription": "Description Required",
     "descriptionRequired": "Please provide a detailed description of the incident."
+  },
+  "weather": {
+    "clear": "Clear",
+    "cloudy": "Cloudy",
+    "rain": "Rain",
+    "fog": "Fog",
+    "snow": "Snow",
+    "wind": "Windy"
+  },
+  "roadConditions": {
+    "dry": "Dry",
+    "wet": "Wet",
+    "icy": "Icy",
+    "construction": "Construction Zone",
+    "damaged": "Road Damage"
+  },
+  "severity": {
+    "minor": "Minor",
+    "moderate": "Moderate",
+    "severe": "Severe"
+  },
+  "photos": {
+    "general": "General",
+    "documents": "Documents",
+    "damage": "Damage"
+  },
+  "profile": {
+    "myVehicles": "My Vehicles",
+    "vehicles": "vehicles"
+  },
+  "vehiclesScreen": {
+    "vehiclesLimit": "Vehicle Limit Reached",
+    "removeVehicleAlert": "Remove Vehicle",
+    "addVehicle": "Add Vehicle",
+    "noVehicle": "No vehicles added yet. Add your first vehicle to get started."
+  },
+  "statementParties": {
+    "involvedParties": "Involved Parties",
+    "whoWasInvolved": "Who was involved in the incident?",
+    "selectAllInvolvedParties": "Select all parties that were involved in the incident. You can add details for each party.",
+    "driver": "Driver",
+    "driverDescription": "Another vehicle driver involved in the incident",
+    "passenger": "Passenger",
+    "passengerDescription": "Passenger in any vehicle involved",
+    "pedestrian": "Pedestrian",
+    "pedestrianDescription": "Person walking or crossing the street",
+    "propertyOwner": "Property Owner",
+    "propertyOwnerDescription": "Owner of damaged property (building, fence, etc.)",
+    "witness": "Witness",
+    "witnessDescription": "Person who witnessed the incident",
+    "enterName": "Enter person's name",
+    "editDetails": "Edit Details",
+    "addDetails": "Add Details",
+    "selectedParties": "Selected Parties",
+    "noName": "No name provided",
+    "noPartiesSelected": "No Parties Selected",
+    "selectPartiesRequired": "Please select at least one party involved in the incident.",
+    "incompleteDetails": "Incomplete Details",
+    "addNamesFor": "Please add names for the following parties"
   },
   "vehicleForm": {
     "make": "Make",
@@ -315,8 +448,5 @@
   "vehicleFormScreen": {
     "header": "Add Vehicle",
     "modalHeader": "Select Fuel Type"
-  },
-  "review": {
-    "vehicle": "Vehicle Information"
   }
 }

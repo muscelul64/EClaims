@@ -5,7 +5,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { I18nProvider } from './i18n-provider';
+import I18nProvider from './i18n-provider';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

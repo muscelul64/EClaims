@@ -14,24 +14,34 @@ const DamageTypeCard = ({
   title, 
   description, 
   icon, 
-  onPress 
+  onPress,
+  disabled = false
 }: {
   title: string;
   description: string;
   icon: string;
   onPress: () => void;
+  disabled?: boolean;
 }) => {
   const cardColor = useThemeColor({}, 'tint');
   
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.damageCard, { backgroundColor: cardColor }]}>
+    <TouchableOpacity 
+      onPress={disabled ? undefined : onPress} 
+      style={[
+        styles.damageCard, 
+        { backgroundColor: disabled ? '#999' : cardColor },
+        disabled && styles.disabledCard
+      ]}
+      disabled={disabled}
+    >
       <View style={styles.cardContent}>
         <View style={styles.iconContainer}>
-          <ThemedText style={styles.cardIcon}>{icon}</ThemedText>
+          <ThemedText style={[styles.cardIcon, disabled && styles.disabledText]}>{icon}</ThemedText>
         </View>
         <View style={styles.cardText}>
-          <ThemedText style={styles.cardTitle}>{title}</ThemedText>
-          <ThemedText style={styles.cardDescription}>{description}</ThemedText>
+          <ThemedText style={[styles.cardTitle, disabled && styles.disabledText]}>{title}</ThemedText>
+          <ThemedText style={[styles.cardDescription, disabled && styles.disabledText]}>{description}</ThemedText>
         </View>
       </View>
     </TouchableOpacity>
@@ -74,7 +84,13 @@ export default function DamageAssessmentScreen() {
       Alert.alert(
         t('common.error'),
         String(t('damage.selectVehicleFirst')),
-        [{ text: String(t('common.ok')) }]
+        [
+          { text: String(t('common.cancel')), style: 'cancel' },
+          {
+            text: String(t('vehicles.selectVehicle')),
+            onPress: () => router.push('/vehicles?mode=select')
+          }
+        ]
       );
       return;
     }
@@ -151,8 +167,8 @@ export default function DamageAssessmentScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Vehicle Info */}
-        {selectedVehicle && (
+        {/* Vehicle Selection/Info */}
+        {selectedVehicle ? (
           <View style={styles.vehicleInfo}>
             <ThemedText style={styles.vehicleTitle}>
               {selectedVehicle.make} {selectedVehicle.model}
@@ -160,6 +176,18 @@ export default function DamageAssessmentScreen() {
             <ThemedText style={styles.vehiclePlate}>
               {selectedVehicle.licensePlate}
             </ThemedText>
+          </View>
+        ) : (
+          <View style={styles.vehicleSelection}>
+            <ThemedText style={styles.vehicleSelectionTitle}>
+              {t('damage.selectVehicleFirst')}
+            </ThemedText>
+            <ThemedButton
+              title={t('vehicles.selectVehicle')}
+              onPress={() => router.push('/vehicles?mode=select')}
+              variant="primary"
+              style={styles.selectVehicleButton}
+            />
           </View>
         )}
 
@@ -185,6 +213,7 @@ export default function DamageAssessmentScreen() {
               description={type.description}
               icon={type.icon}
               onPress={() => handleDamageTypePress(type)}
+              disabled={!selectedVehicle}
             />
           ))}
         </View>
@@ -242,6 +271,26 @@ const styles = StyleSheet.create({
   vehiclePlate: {
     fontSize: 14,
     opacity: 0.7,
+  },
+  vehicleSelection: {
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  vehicleSelectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#FF9800',
+  },
+  selectVehicleButton: {
+    backgroundColor: '#FF9800',
+    minWidth: 200,
   },
   instructions: {
     marginBottom: 20,
@@ -317,6 +366,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFF',
     opacity: 0.9,
+  },
+  disabledCard: {
+    opacity: 0.5,
+  },
+  disabledText: {
+    opacity: 0.6,
   },
   finishSection: {
     marginTop: 20,

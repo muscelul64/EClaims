@@ -1,3 +1,4 @@
+import { submitStatement as apiSubmitStatement } from '@/utils/api/statements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { CapturePhoto } from './use-camera-store';
@@ -40,6 +41,7 @@ export interface ClaimStatement {
     phone: string;
     statement: string;
   }[];
+  confirmationNumber?: string;
   createdAt: number;
   updatedAt: number;
   submittedAt?: number;
@@ -57,11 +59,11 @@ interface StatementsState {
   addPhoto: (photo: CapturePhoto) => void;
   removePhoto: (photoId: string) => void;
   saveStatement: () => Promise<void>;
-  submitStatement: () => Promise<void>;
+  submitStatement: () => Promise<any>;
   loadStatements: () => Promise<void>;
   clearCurrentStatement: () => void;
   // New methods for statement workflow
-  addStatement: (statement: ClaimStatement) => void;
+  addStatement: (statement: ClaimStatement) => Promise<void>;
   updateStatement: (id: string, updates: Partial<ClaimStatement>) => void;
   deleteStatement: (id: string) => void;
   getStatement: (id: string) => ClaimStatement | undefined;
@@ -192,17 +194,59 @@ export const useStatementsStore = create<StatementsState>((set, get) => ({
   submitStatement: async () => {
     const { currentStatement } = get();
     if (!currentStatement) return;
-    
-    set((state) => ({
-      currentStatement: {
+
+    try {
+      set({ isLoading: true });
+      
+      // Update statement status to submitting
+      const updatedStatement = {
         ...currentStatement,
-        status: 'submitted',
+        status: 'submitted' as const,
         submittedAt: Date.now(),
         updatedAt: Date.now(),
+      };
+
+      set({ currentStatement: updatedStatement });
+
+      // Submit to API
+      const response = await apiSubmitStatement(updatedStatement);
+      
+      if (response.success && response.data) {
+        console.log('Statement submitted successfully:', {
+          confirmationNumber: response.data.confirmationNumber,
+          statementId: response.data.statementId,
+        });
+
+        // Update statement with confirmation info if available
+        const finalStatement = {
+          ...updatedStatement,
+          status: 'processing' as const,
+          confirmationNumber: response.data.confirmationNumber,
+        };
+
+        set({ currentStatement: finalStatement });
+        await get().saveStatement();
+        
+        return response.data;
+      } else {
+        throw new Error(response.message || 'Failed to submit statement');
       }
-    }));
-    
-    await get().saveStatement();
+    } catch (error) {
+      console.error('Failed to submit statement:', error);
+      
+      // Revert status on error
+      set((state) => ({
+        currentStatement: state.currentStatement ? {
+          ...state.currentStatement,
+          status: 'draft',
+          submittedAt: undefined,
+        } : null
+      }));
+      
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
   },
   
   loadStatements: async () => {
@@ -225,21 +269,22 @@ export const useStatementsStore = create<StatementsState>((set, get) => ({
   },
 
   // New methods for statement workflow
-  addStatement: (statement) => {
+  addStatement: async (statement) => {
+    console.log('Adding statement to store:', statement.id);
+    
     set((state) => ({
       statements: [statement, ...state.statements],
     }));
     
     // Save to AsyncStorage
-    const saveToStorage = async () => {
-      try {
-        const updatedStatements = [statement, ...get().statements.filter(s => s.id !== statement.id)];
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedStatements));
-      } catch (error) {
-        console.error('Failed to save statement:', error);
-      }
-    };
-    saveToStorage();
+    try {
+      const { statements } = get();
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(statements));
+      console.log('Statement saved successfully to storage');
+    } catch (error) {
+      console.error('Failed to save statement to storage:', error);
+      throw error;
+    }
   },
 
   updateStatement: (id, updates) => {

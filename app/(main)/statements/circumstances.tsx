@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
@@ -94,6 +94,12 @@ export default function StatementCircumstancesScreen() {
   const inputBackgroundColor = useThemeColor({ light: '#f5f5f5', dark: '#333' }, 'background');
   const textColor = useThemeColor({}, 'text');
 
+  const handleSpeedChange = (text: string) => {
+    // Only allow numbers, remove any non-numeric characters
+    const numericText = text.replace(/[^0-9]/g, '');
+    setSpeed(numericText);
+  };
+
   const handleCircumstanceSelect = (circumstanceId: string) => {
     setSelectedCircumstance(circumstanceId);
   };
@@ -139,7 +145,7 @@ export default function StatementCircumstancesScreen() {
       weather: selectedWeather,
       roadConditions: selectedRoadConditions,
       description: description.trim(),
-      speed: speed.trim()
+      speed: speed.trim() || '0' // Ensure speed is always a valid number string, default to '0' if empty
     };
     
     router.push({
@@ -170,7 +176,16 @@ export default function StatementCircumstancesScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.form}>
           {/* Circumstances */}
           <View style={styles.section}>
@@ -305,7 +320,7 @@ export default function StatementCircumstancesScreen() {
                   }
                 ]}
                 value={speed}
-                onChangeText={setSpeed}
+                onChangeText={handleSpeedChange}
                 placeholder={t('statementCircumstances.speedPlaceholder') as string}
                 placeholderTextColor="rgba(128, 128, 128, 0.8)"
                 keyboardType="numeric"
@@ -345,24 +360,28 @@ export default function StatementCircumstancesScreen() {
             </ThemedText>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Continue Button */}
-      <View style={styles.footer}>
-        <ThemedButton
-          title={t('common.continue')}
-          onPress={handleContinue}
-          variant="primary"
-          style={styles.continueButton}
-          disabled={!selectedCircumstance || !description.trim()}
-        />
-      </View>
+        {/* Continue Button */}
+        <View style={styles.footer}>
+          <ThemedButton
+            title={t('common.continue')}
+            onPress={handleContinue}
+            variant="primary"
+            style={styles.continueButton}
+            disabled={!selectedCircumstance || !description.trim()}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
     flex: 1,
   },
   header: {
@@ -386,6 +405,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   form: {
     padding: 20,
@@ -478,7 +501,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 40,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     backgroundColor: '#4CAF50',

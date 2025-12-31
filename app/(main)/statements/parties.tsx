@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
@@ -57,6 +57,8 @@ export default function StatementPartiesScreen() {
   
   const [selectedParties, setSelectedParties] = useState<string[]>([]);
   const [partyDetails, setPartyDetails] = useState<Record<string, Partial<Party>>>({});
+  const [inputModal, setInputModal] = useState<{visible: boolean; partyType: string; currentName: string}>({ visible: false, partyType: '', currentName: '' });
+  const [tempName, setTempName] = useState('');
   
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1c1c1c' }, 'background');
@@ -80,34 +82,30 @@ export default function StatementPartiesScreen() {
   };
 
   const handlePartyDetails = (partyType: string) => {
-    const partyTypeData = PARTY_TYPES.find(p => p.id === partyType);
-    if (!partyTypeData) return;
+    const currentName = partyDetails[partyType]?.name || '';
+    setTempName(currentName);
+    setInputModal({ visible: true, partyType, currentName });
+  };
 
-    Alert.prompt(
-      t(partyTypeData.title) as string,
-      t('statementParties.enterName') as string,
-      [
-        { text: t('common.cancel') as string, style: 'cancel' },
-        {
-          text: t('common.ok') as string,
-          onPress: (name: string | undefined) => {
-            if (name && name.trim()) {
-              setPartyDetails(prev => ({
-                ...prev,
-                [partyType]: {
-                  ...prev[partyType],
-                  id: partyType,
-                  type: partyType as Party['type'],
-                  name: name.trim()
-                }
-              }));
-            }
-          }
+  const handleSaveName = () => {
+    if (tempName.trim()) {
+      setPartyDetails(prev => ({
+        ...prev,
+        [inputModal.partyType]: {
+          ...prev[inputModal.partyType],
+          id: inputModal.partyType,
+          type: inputModal.partyType as Party['type'],
+          name: tempName.trim()
         }
-      ],
-      'plain-text',
-      partyDetails[partyType]?.name || ''
-    );
+      }));
+    }
+    setInputModal({ visible: false, partyType: '', currentName: '' });
+    setTempName('');
+  };
+
+  const handleCancelInput = () => {
+    setInputModal({ visible: false, partyType: '', currentName: '' });
+    setTempName('');
   };
 
   const handleContinue = () => {
@@ -134,7 +132,17 @@ export default function StatementPartiesScreen() {
     }
 
     // Navigate to circumstances/details
-    const partiesData = selectedParties.map(partyType => partyDetails[partyType]);
+    const partiesData = selectedParties
+      .map(partyType => partyDetails[partyType])
+      .filter(party => party && party.name) // Only include parties with names
+      .map(party => ({
+        id: party!.id || party!.type,
+        type: party!.type,
+        name: party!.name,
+        phone: party!.phone || undefined,
+        isInsured: party!.isInsured || false,
+        insuranceCompany: party!.insuranceCompany || undefined
+      }));
     
     router.push({
       pathname: '/statements/circumstances',
@@ -270,6 +278,53 @@ export default function StatementPartiesScreen() {
           disabled={selectedParties.length === 0}
         />
       </View>
+
+      {/* Input Modal */}
+      <Modal
+        visible={inputModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelInput}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: cardBackgroundColor, borderColor }]}>
+            <ThemedText style={styles.modalTitle}>
+              {inputModal.partyType ? t(PARTY_TYPES.find(p => p.id === inputModal.partyType)?.title || '') : ''}
+            </ThemedText>
+            
+            <ThemedText style={styles.modalLabel}>
+              {t('statementParties.enterName')}
+            </ThemedText>
+            
+            <TextInput
+              style={[styles.modalInput, { borderColor, color: useThemeColor({}, 'text') }]}
+              value={tempName}
+              onChangeText={setTempName}
+              placeholder={t('statementParties.enterName') as string}
+              placeholderTextColor="#999"
+              autoFocus={true}
+              onSubmitEditing={handleSaveName}
+              returnKeyType="done"
+            />
+            
+            <View style={styles.modalButtons}>
+              <ThemedButton
+                title={t('common.cancel')}
+                onPress={handleCancelInput}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              <ThemedButton
+                title={t('common.ok')}
+                onPress={handleSaveName}
+                variant="primary"
+                style={styles.modalButton}
+                disabled={!tempName.trim()}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -414,5 +469,45 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     backgroundColor: '#4CAF50',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 14,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+    minHeight: 44,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
   },
 });

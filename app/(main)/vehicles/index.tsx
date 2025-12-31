@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,10 +9,11 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useVehiclesStore, Vehicle } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
 
-const VehicleCard = ({ vehicle, onPress, onDelete }: {
+const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode }: {
   vehicle: Vehicle;
   onPress: () => void;
   onDelete: () => void;
+  isSelectionMode?: boolean;
 }) => {
   const cardColor = useThemeColor({}, 'tint');
   const { t } = useTranslation();
@@ -35,9 +36,16 @@ const VehicleCard = ({ vehicle, onPress, onDelete }: {
           )}
         </View>
         <View style={styles.vehicleActions}>
-          <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
-            <ThemedText style={styles.deleteText}>🗑️</ThemedText>
-          </TouchableOpacity>
+          {!isSelectionMode && (
+            <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
+              <ThemedText style={styles.deleteText}>🗑️</ThemedText>
+            </TouchableOpacity>
+          )}
+          {isSelectionMode && (
+            <ThemedText style={styles.selectText}>
+              {t('common.select')}
+            </ThemedText>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -46,10 +54,12 @@ const VehicleCard = ({ vehicle, onPress, onDelete }: {
 
 export default function MyVehiclesScreen() {
   const router = useRouter();
+  const { mode } = useLocalSearchParams();
   const { t } = useTranslation();
-  const { vehicles, isLoading, removeVehicle, loadVehicles } = useVehiclesStore();
+  const { vehicles, removeVehicle, loadVehicles, selectVehicle } = useVehiclesStore();
   const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
+  
+  const isSelectionMode = mode === 'select';
 
   useEffect(() => {
     loadVehicles();
@@ -68,10 +78,17 @@ export default function MyVehiclesScreen() {
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
-    router.push({
-      pathname: '/vehicles/edit/[id]',
-      params: { id: vehicle.id }
-    });
+    if (isSelectionMode) {
+      // Select the vehicle and navigate back
+      selectVehicle(vehicle);
+      router.back();
+    } else {
+      // Edit the vehicle
+      router.push({
+        pathname: '/vehicles/edit/[id]',
+        params: { id: vehicle.id }
+      });
+    }
   };
 
   const handleDeleteVehicle = (vehicle: Vehicle) => {
@@ -94,6 +111,7 @@ export default function MyVehiclesScreen() {
       vehicle={item}
       onPress={() => handleEditVehicle(item)}
       onDelete={() => handleDeleteVehicle(item)}
+      isSelectionMode={isSelectionMode}
     />
   );
 
@@ -102,26 +120,30 @@ export default function MyVehiclesScreen() {
       <ThemedText style={styles.vehicleCount}>
         {vehicles.length}/10 {t('profile.vehicles')}
       </ThemedText>
-      <ThemedButton
-        title={t('vehiclesScreen.addVehicle')}
-        onPress={handleAddVehicle}
-        variant="primary"
-        style={styles.addButton}
-      />
+      {!isSelectionMode && (
+        <ThemedButton
+          title={t('vehiclesScreen.addVehicle')}
+          onPress={handleAddVehicle}
+          variant="primary"
+          style={styles.addButton}
+        />
+      )}
     </View>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <ThemedText style={styles.emptyText}>
-        {t('vehiclesScreen.noVehicle')}
+        {isSelectionMode ? t('vehicles.noVehiclesForSelection') : t('vehiclesScreen.noVehicle')}
       </ThemedText>
-      <ThemedButton
-        title={t('vehiclesScreen.addVehicle')}
-        onPress={handleAddVehicle}
-        variant="primary"
-        style={styles.addButton}
-      />
+      {!isSelectionMode && (
+        <ThemedButton
+          title={t('vehiclesScreen.addVehicle')}
+          onPress={handleAddVehicle}
+          variant="primary"
+          style={styles.addButton}
+        />
+      )}
     </View>
   );
 
@@ -132,7 +154,9 @@ export default function MyVehiclesScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ThemedText>← {t('common.back')}</ThemedText>
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>{t('profile.myVehicles')}</ThemedText>
+        <ThemedText style={styles.headerTitle}>
+          {isSelectionMode ? t('vehicles.selectVehicle') : t('profile.myVehicles')}
+        </ThemedText>
       </View>
 
       {vehicles.length === 0 ? (
@@ -226,6 +250,15 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     fontSize: 18,
+  },
+  selectText: {
+    fontSize: 12,
+    color: '#FFF',
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 4,
   },
   emptyContainer: {
     flex: 1,

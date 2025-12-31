@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
@@ -109,27 +109,38 @@ export default function AddVehicleScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedButton
-          title={t('common.cancel')}
-          onPress={() => router.back()}
-          variant="secondary"
-          style={styles.headerButton}
-        />
-        <ThemedText style={styles.headerTitle}>
-          {isEditing ? t('common.editVehicle') : t('vehicleFormScreen.header')}
-        </ThemedText>
-        <ThemedButton
-          title={t('common.save')}
-          onPress={handleSave}
-          variant="primary"
-          style={styles.headerButton}
-          disabled={isLoading}
-        />
-      </View>
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <ThemedButton
+            title={t('common.cancel')}
+            onPress={() => router.back()}
+            variant="secondary"
+            style={styles.headerButton}
+          />
+          <ThemedText style={styles.headerTitle}>
+            {isEditing ? t('common.editVehicle') : t('vehicleFormScreen.header')}
+          </ThemedText>
+          <ThemedButton
+            title={t('common.save')}
+            onPress={handleSave}
+            variant="primary"
+            style={styles.headerButton}
+            disabled={isLoading}
+          />
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.content} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={true}
+        >
         <View style={styles.form}>
           <ThemedText style={styles.sectionTitle}>{t('review.vehicle')}</ThemedText>
           
@@ -137,20 +148,14 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.make')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.make'),
-                    '',
-                    (text) => updateFormData('make', text || ''),
-                    'plain-text',
-                    formData.make
-                  );
-                }}
-              >
-                {formData.make || t('vehicleForm.makePlaceholder')}
-              </ThemedText>
+                value={formData.make}
+                onChangeText={(text) => updateFormData('make', text)}
+                placeholder={t('vehicleForm.makePlaceholder') || 'Enter make'}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
             </ThemedView>
           </View>
 
@@ -158,20 +163,14 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.model')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.model'),
-                    '',
-                    (text) => updateFormData('model', text || ''),
-                    'plain-text',
-                    formData.model
-                  );
-                }}
-              >
-                {formData.model || t('vehicleForm.modelPlaceholder')}
-              </ThemedText>
+                value={formData.model}
+                onChangeText={(text) => updateFormData('model', text)}
+                placeholder={t('vehicleForm.modelPlaceholder') || ''}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
             </ThemedView>
           </View>
 
@@ -179,20 +178,14 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.licensePlate')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.licensePlate'),
-                    '',
-                    (text) => updateFormData('licensePlate', text || ''),
-                    'plain-text',
-                    formData.licensePlate
-                  );
-                }}
-              >
-                {formData.licensePlate || t('vehicleForm.licensePlatePlaceholder')}
-              </ThemedText>
+                value={formData.licensePlate}
+                onChangeText={(text) => updateFormData('licensePlate', text)}
+                placeholder={t('vehicleForm.licensePlatePlaceholder') || ''}
+                placeholderTextColor="#999"
+                autoCapitalize="characters"
+              />
             </ThemedView>
           </View>
 
@@ -200,25 +193,20 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.year')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.year'),
-                    '',
-                    (text) => {
-                      const year = parseInt(text || '0', 10);
-                      if (year >= 1900 && year <= new Date().getFullYear()) {
-                        updateFormData('year', year);
-                      }
-                    },
-                    undefined, // no keyboardType for year
-                    formData.year.toString()
-                  );
+                value={formData.year.toString()}
+                onChangeText={(text) => {
+                  const year = parseInt(text || '0', 10);
+                  if (!isNaN(year) && year >= 1900 && year <= new Date().getFullYear()) {
+                    updateFormData('year', year);
+                  }
                 }}
-              >
-                {formData.year.toString()}
-              </ThemedText>
+                placeholder="Year"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                maxLength={4}
+              />
             </ThemedView>
           </View>
 
@@ -226,20 +214,15 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.vin')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.vin'),
-                    '',
-                    (text) => updateFormData('vin', text || ''),
-                    'plain-text',
-                    formData.vin
-                  );
-                }}
-              >
-                {formData.vin || t('vehicleForm.vinPlaceholder')}
-              </ThemedText>
+                value={formData.vin}
+                onChangeText={(text) => updateFormData('vin', text)}
+                placeholder={t('vehicleForm.vinPlaceholder') || 'VIN'}
+                placeholderTextColor="#999"
+                autoCapitalize="characters"
+                maxLength={17}
+              />
             </ThemedView>
           </View>
 
@@ -247,54 +230,41 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.color')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.color'),
-                    '',
-                    (text) => updateFormData('color', text || ''),
-                    'plain-text',
-                    formData.color
-                  );
-                }}
-              >
-                {formData.color || t('vehicleForm.colorPlaceholder')}
-              </ThemedText>
+                value={formData.color}
+                onChangeText={(text) => updateFormData('color', text)}
+                placeholder={t('vehicleForm.colorPlaceholder') || 'Color'}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
             </ThemedView>
           </View>
 
           {/* Fuel Type */}
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.fuelType')}</ThemedText>
-            <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
-                style={styles.inputText}
-                onPress={showFuelTypePicker}
-              >
-                {fuelTypes.find(f => f.key === formData.fuelType)?.label || t('vehicleForm.gasoline')}
-              </ThemedText>
-            </ThemedView>
+            <TouchableOpacity onPress={showFuelTypePicker}>
+              <ThemedView style={[styles.input, { borderColor }]}>
+                <ThemedText style={styles.inputText}>
+                  {fuelTypes.find(f => f.key === formData.fuelType)?.label || t('vehicleForm.gasoline') || 'Gasoline'}
+                </ThemedText>
+              </ThemedView>
+            </TouchableOpacity>
           </View>
 
           {/* Insurance Company */}
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.insuranceCompany')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.insuranceCompany'),
-                    '',
-                    (text) => updateFormData('insuranceCompany', text || ''),
-                    'plain-text',
-                    formData.insuranceCompany
-                  );
-                }}
-              >
-                {formData.insuranceCompany || t('vehicleForm.insuranceCompanyPlaceholder')}
-              </ThemedText>
+                value={formData.insuranceCompany}
+                onChangeText={(text) => updateFormData('insuranceCompany', text)}
+                placeholder={t('vehicleForm.insuranceCompanyPlaceholder') || 'Insurance Company'}
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+              />
             </ThemedView>
           </View>
 
@@ -302,30 +272,26 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.policyNumber')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <ThemedText 
+              <TextInput
                 style={styles.inputText}
-                onPress={() => {
-                  Alert.prompt(
-                    t('vehicleForm.policyNumber'),
-                    '',
-                    (text) => updateFormData('policyNumber', text || ''),
-                    'plain-text',
-                    formData.policyNumber
-                  );
-                }}
-              >
-                {formData.policyNumber || t('vehicleForm.policyNumberPlaceholder')}
-              </ThemedText>
+                value={formData.policyNumber}
+                onChangeText={(text) => updateFormData('policyNumber', text)}
+                placeholder={t('vehicleForm.policyNumberPlaceholder') || 'Policy Number'}
+                placeholderTextColor="#999"
+                autoCapitalize="characters"
+              />
             </ThemedView>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView>      </KeyboardAvoidingView>    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
     flex: 1,
   },
   header: {
@@ -347,8 +313,13 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
   form: {
     padding: 20,
+    minHeight: '100%',
   },
   sectionTitle: {
     fontSize: 16,
@@ -373,5 +344,6 @@ const styles = StyleSheet.create({
   },
   inputText: {
     fontSize: 16,
+    color: 'inherit',
   },
 });

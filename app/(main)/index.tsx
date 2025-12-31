@@ -3,7 +3,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { LanguageDebug } from '@/components/language-debug';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -50,14 +49,6 @@ export default function MainScreen() {
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('i18n initialized:', i18n.isInitialized);
-    console.log('Current language:', i18n.language);
-    console.log('Available languages:', i18n.languages);
-    console.log('Test translation:', t('main.title'));
-  }, [i18n, t]);
-
   const handleMenuPress = (option: MenuOption) => {
     router.push(option.route as any);
   };
@@ -75,7 +66,6 @@ export default function MainScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <LanguageDebug />
       <ThemedView style={styles.header}>
         <ThemedText type="title">{t('main.title') || 'Porsche E-Claims'}</ThemedText>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

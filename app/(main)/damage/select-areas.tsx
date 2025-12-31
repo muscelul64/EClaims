@@ -43,32 +43,49 @@ const VehicleDiagram = ({
 
   return (
     <View style={styles.diagramContainer}>
-      <Svg width="400" height="400" viewBox="0 0 400 400">
-        {/* Vehicle outline */}
-        <Path
-          d={vehicleOutline}
-          fill="rgba(200, 200, 200, 0.3)"
-          stroke="#666"
-          strokeWidth="2"
-        />
+      <View style={styles.svgWrapper}>
+        <Svg width="400" height="400" viewBox="0 0 400 400" style={styles.svgDiagram}>
+          {/* Vehicle outline */}
+          <Path
+            d={vehicleOutline}
+            fill="rgba(200, 200, 200, 0.3)"
+            stroke="#666"
+            strokeWidth="2"
+          />
+          
+          {/* Damage area markers - visual only */}
+          {damageAreas.map((area) => {
+            const isSelected = selectedAreas.includes(area.id);
+            return (
+              <Circle
+                key={area.id}
+                cx={area.position.x}
+                cy={area.position.y}
+                r="20"
+                fill={isSelected ? tintColor : 'rgba(255, 0, 0, 0.6)'}
+                stroke="#FFF"
+                strokeWidth="2"
+              />
+            );
+          })}
+        </Svg>
         
-        {/* Damage area markers */}
-        {damageAreas.map((area) => {
-          const isSelected = selectedAreas.includes(area.id);
-          return (
-            <Circle
-              key={area.id}
-              cx={area.position.x}
-              cy={area.position.y}
-              r="20"
-              fill={isSelected ? tintColor : 'rgba(255, 0, 0, 0.6)'}
-              stroke="#FFF"
-              strokeWidth="2"
-              onPress={() => onAreaPress(area.id)}
-            />
-          );
-        })}
-      </Svg>
+        {/* Touchable overlays for each damage area */}
+        {damageAreas.map((area) => (
+          <TouchableOpacity
+            key={`touch-${area.id}`}
+            style={[
+              styles.damageAreaTouch,
+              {
+                left: area.position.x - 25,
+                top: area.position.y - 25,
+              }
+            ]}
+            onPress={() => onAreaPress(area.id)}
+            activeOpacity={0.7}
+          />
+        ))}
+      </View>
     </View>
   );
 };
@@ -262,6 +279,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.02)',
     borderRadius: 12,
     padding: 20,
+  },
+  svgWrapper: {
+    position: 'relative',
+    width: 400,
+    height: 400,
+  },
+  svgDiagram: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  damageAreaTouch: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'transparent',
   },
   selectedAreas: {
     marginVertical: 20,

@@ -1,0 +1,48 @@
+{
+  "name": "@yourcompany/eclaims-integration",
+  "version": "1.0.0",
+  "description": "E-Claims integration module for embedding in existing Android apps",
+  "main": "integration/index.ts",
+  "types": "integration/index.ts",
+  "files": [
+    "integration/**/*",
+    "components/**/*",
+    "stores/**/*",
+    "hooks/**/*",
+    "utils/**/*",
+    "app/locales/**/*",
+    "app/i18n.ts",
+    "app/i18n-provider.tsx"
+  ],
+  "scripts": {
+    "build:integration": "tsc --build tsconfig.integration.json",
+    "pack:integration": "npm pack",
+    "prepare:integration": "npm run build:integration && npm run pack:integration"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "expo-router": ">=6.0.0",
+    "react-i18next": ">=12.0.0",
+    "zustand": ">=4.0.0",
+    "@react-native-async-storage/async-storage": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "insurance",
+    "claims",
+    "integration",
+    "module"
+  ],
+  "author": "Your Company",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourcompany/eclaims-integration"
+  }
+}
