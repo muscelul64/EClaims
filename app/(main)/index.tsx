@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/hooks/use-auth';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 type MenuOption = {
   id: string;
@@ -48,6 +49,8 @@ export default function MainScreen() {
   const router = useRouter();
   const { logout } = useAuth();
   const { t, i18n } = useTranslation();
+  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#444' });
+  const buildCardBg = useThemeColor({ light: '#f8f9fa', dark: '#1a1a1a' });
 
   const handleMenuPress = (option: MenuOption) => {
     router.push(option.route as any);
@@ -99,8 +102,16 @@ export default function MainScreen() {
               </ThemedView>
             </TouchableOpacity>
           ))}
-        </ThemedView>
-      </ScrollView>
+        </ThemedView>        
+        {/* Build Info Card */}
+        <ThemedView style={[styles.buildCard, { backgroundColor: buildCardBg, borderColor }]}>
+          <View style={styles.buildInfo}>
+            <IconSymbol name="gear" size={16} color={useThemeColor({ light: '#666', dark: '#999' })} />
+            <ThemedText style={styles.buildText}>
+              v1.0.0 (Build 5)
+            </ThemedText>
+          </View>
+        </ThemedView>      </ScrollView>
     </ThemedView>
   );
 }
@@ -155,5 +166,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     opacity: 0.7,
+  },
+  buildCard: {
+    marginTop: 30,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  buildInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  buildText: {
+    fontSize: 12,
+    opacity: 0.6,
+    fontFamily: 'monospace',
   },
 });
