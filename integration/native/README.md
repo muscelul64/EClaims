@@ -6,6 +6,14 @@ This guide explains how to integrate the React Native E-Claims app into native A
 
 The E-Claims app can be embedded into existing native applications as a module, allowing seamless integration with your existing user management and vehicle management systems.
 
+**Production Configuration:**
+- **App Name**: Porsche E-Claims
+- **iOS Bundle ID**: `com.porsche.eclaims`
+- **Android Package**: `com.porsche.eclaims`
+- **Deeplink Scheme**: `porscheeclaims://`
+- **Universal Links**: `https://eclaims.porsche.com/`
+- **API Endpoint**: `https://api.eclaims.porsche.com`
+
 ## Architecture
 
 ```
@@ -189,9 +197,12 @@ Native App Events → React Native:
 
 ```kotlin
 val config = mapOf(
-    "apiBaseUrl" to "https://your-api.com",
-    "environment" to "production", // or "development"
+    "apiBaseUrl" to "https://api.eclaims.porsche.com",
+    "environment" to if (BuildConfig.DEBUG) "development" else "production",
     "analyticsEnabled" to true,
+    "masterAppScheme" to "porsche-master-app", // Production master app
+    "appScheme" to "porscheeclaims",
+    "universalLinkHost" to "eclaims.porsche.com",
     "theme" to mapOf(
         "primaryColor" to "#007AFF",
         "darkMode" to isSystemInDarkMode()
@@ -208,9 +219,12 @@ val config = mapOf(
 
 ```swift
 let config: [String: Any] = [
-    "apiBaseUrl": "https://your-api.com",
-    "environment": "production", // or "development"
+    "apiBaseUrl": "https://api.eclaims.porsche.com",
+    "environment": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug" ? "development" : "production",
     "analyticsEnabled": true,
+    "masterAppScheme": "porsche-master-app", // Production master app
+    "appScheme": "porscheeclaims",
+    "universalLinkHost": "eclaims.porsche.com",
     "theme": [
         "primaryColor": "#007AFF",
         "darkMode": traitCollection.userInterfaceStyle == .dark
@@ -234,10 +248,27 @@ let config: [String: Any] = [
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- Deeplink intent filter -->
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="porscheeclaims" />
+</intent-filter>
+
+<intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data android:scheme="https" android:host="eclaims.porsche.com" />
+</intent-filter>
 
 <provider
     android:name="androidx.core.content.FileProvider"
-    android:authorities="${applicationId}.fileprovider"
+    android:authorities="com.porsche.eclaims.fileprovider"
     android:exported="false"
     android:grantUriPermissions="true">
     <meta-data
@@ -255,6 +286,25 @@ let config: [String: Any] = [
 <string>E-Claims needs location access to record incident location</string>
 <key>NSPhotoLibraryUsageDescription</key>
 <string>E-Claims needs photo library access to save damage photos</string>
+
+<!-- URL Schemes for deeplinks -->
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLName</key>
+        <string>com.porsche.eclaims</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>porscheeclaims</string>
+        </array>
+    </dict>
+</array>
+
+<!-- Associated Domains for Universal Links -->
+<key>com.apple.developer.associated-domains</key>
+<array>
+    <string>applinks:eclaims.porsche.com</string>
+</array>
 ```
 
 ## Navigation Integration

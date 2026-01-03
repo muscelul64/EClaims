@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/hooks/use-auth';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { runSecurityTests } from '@/utils/security-test-suite';
 
 type MenuOption = {
   id: string;
@@ -103,15 +105,36 @@ export default function MainScreen() {
             </TouchableOpacity>
           ))}
         </ThemedView>        
+        
         {/* Build Info Card */}
         <ThemedView style={[styles.buildCard, { backgroundColor: buildCardBg, borderColor }]}>
           <View style={styles.buildInfo}>
             <IconSymbol name="gear" size={16} color={useThemeColor({ light: '#666', dark: '#999' })} />
             <ThemedText style={styles.buildText}>
-              v1.0.0 (Build 5)
+              v{Constants.expoConfig?.version || '1.0.0'} ({Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || 'Build 1'})
             </ThemedText>
           </View>
-        </ThemedView>      </ScrollView>
+          <ThemedText style={styles.buildSubtext}>
+            {Constants.expoConfig?.name || 'Porsche E-Claims'}
+          </ThemedText>
+        </ThemedView>
+        
+        {/* Security Test Card - Development only */}
+        {__DEV__ && (
+          <ThemedView style={[styles.buildCard, { backgroundColor: buildCardBg, borderColor, marginTop: 10 }]}>
+            <TouchableOpacity onPress={runSecurityTests} style={styles.securityTestButton}>
+              <View style={styles.buildInfo}>
+                <IconSymbol name="shield.checkerboard" size={16} color={useThemeColor({ light: '#007AFF', dark: '#0A84FF' })} />
+                <ThemedText style={[styles.buildText, { color: useThemeColor({ light: '#007AFF', dark: '#0A84FF' }) }]}>
+                  Run Security Tests
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.buildSubtext}>
+                Test encryption, JWT tokens, and secure deeplinks
+              </ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        )}      </ScrollView>
     </ThemedView>
   );
 }
@@ -174,14 +197,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
+  securityTestButton: {
+    width: '100%',
+    alignItems: 'center',
+  },
   buildInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   buildText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  buildSubtext: {
     fontSize: 12,
-    opacity: 0.6,
-    fontFamily: 'monospace',
+    opacity: 0.7,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

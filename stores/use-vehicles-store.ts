@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { useUserStore } from './use-user-store';
 
 export interface Vehicle {
   id: string;
@@ -27,6 +28,7 @@ interface VehiclesState {
   selectVehicle: (vehicle: Vehicle | null) => void;
   loadVehicles: () => Promise<void>;
   saveVehicles: () => Promise<void>;
+  getFilteredVehicles: () => Vehicle[];
 }
 
 const STORAGE_KEY = '@vehicles';
@@ -99,5 +101,30 @@ export const useVehiclesStore = create<VehiclesState>((set, get) => ({
     } catch (error) {
       console.error('Failed to save vehicles:', error);
     }
+  },
+
+  getFilteredVehicles: () => {
+    const { vehicles } = get();
+    const userState = useUserStore.getState();
+    const deeplinkContext = userState.user.deeplinkContext;
+    
+    // If there's a vehicle restriction from deeplink
+    if (deeplinkContext?.hasVehicleRestriction) {
+      // If we have vehicle data from deeplink (single vehicle mode), show only that vehicle
+      if (deeplinkContext.vehicleData) {
+        // Find the vehicle that matches the deeplink data (by VIN or other unique identifier)
+        return vehicles.filter(vehicle => 
+          vehicle.vin === deeplinkContext.vehicleData.vin ||
+          vehicle.id === deeplinkContext.allowedVehicleId
+        );
+      }
+      // Otherwise, filter by allowed vehicle ID
+      else if (deeplinkContext.allowedVehicleId) {
+        return vehicles.filter(vehicle => vehicle.id === deeplinkContext.allowedVehicleId);
+      }
+    }
+    
+    // Otherwise, show all vehicles
+    return vehicles;
   },
 }));

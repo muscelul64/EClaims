@@ -90,7 +90,7 @@ We may update this Privacy Policy periodically. We will notify users of any mate
 
 If you have questions about this Privacy Policy or your data rights, please contact us at:
 
-**Email**: privacy@porsche-eclaims.com  
+**Email**: privacy@deactech-eclaims.com  
 **Address**: [Your Company Address]  
 **Phone**: [Your Company Phone]
 

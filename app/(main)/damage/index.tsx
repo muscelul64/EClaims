@@ -7,6 +7,7 @@ import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCameraStore } from '@/stores/use-camera-store';
+import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
 
@@ -52,8 +53,21 @@ export default function DamageAssessmentScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { photos, getPhotosByType } = useCameraStore();
-  const { selectedVehicle } = useVehiclesStore();
+  const { selectedVehicle, selectVehicle, getFilteredVehicles } = useVehiclesStore();
+  const { user } = useUserStore();
   const backgroundColor = useThemeColor({}, 'background');
+  
+  // Auto-select vehicle from deeplink context if available
+  React.useEffect(() => {
+    const deeplinkContext = user.deeplinkContext;
+    if (deeplinkContext?.hasVehicleRestriction && deeplinkContext.allowedVehicleId && !selectedVehicle) {
+      const filteredVehicles = getFilteredVehicles();
+      const deeplinkVehicle = filteredVehicles.find(v => v.id === deeplinkContext.allowedVehicleId);
+      if (deeplinkVehicle) {
+        selectVehicle(deeplinkVehicle);
+      }
+    }
+  }, [user.deeplinkContext, selectedVehicle, selectVehicle, getFilteredVehicles]);
 
   const damageTypes = [
     {

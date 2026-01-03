@@ -3,9 +3,11 @@ import React, { useEffect } from 'react';
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DeeplinkRestrictionBanner } from '@/components/deeplink-restriction-banner';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore, Vehicle } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
 
@@ -56,9 +58,15 @@ export default function MyVehiclesScreen() {
   const router = useRouter();
   const { mode } = useLocalSearchParams();
   const { t } = useTranslation();
-  const { vehicles, removeVehicle, loadVehicles, selectVehicle } = useVehiclesStore();
+  const { vehicles: allVehicles, getFilteredVehicles, removeVehicle, loadVehicles, selectVehicle } = useVehiclesStore();
+  const { user } = useUserStore();
   const backgroundColor = useThemeColor({}, 'background');
   
+  // Check if we're in a restricted deeplink context
+  const hasVehicleRestriction = user.deeplinkContext?.hasVehicleRestriction || false;
+  
+  // Use filtered vehicles based on deeplink context
+  const vehicles = getFilteredVehicles();
   const isSelectionMode = mode === 'select';
 
   useEffect(() => {
@@ -66,7 +74,7 @@ export default function MyVehiclesScreen() {
   }, [loadVehicles]);
 
   const handleAddVehicle = () => {
-    if (vehicles.length >= 10) {
+    if (allVehicles.length >= 10) {
       Alert.alert(
         t('vehiclesScreen.vehiclesLimit'),
         '',
@@ -120,7 +128,7 @@ export default function MyVehiclesScreen() {
       <ThemedText style={styles.vehicleCount}>
         {vehicles.length}/10 {t('profile.vehicles')}
       </ThemedText>
-      {!isSelectionMode && (
+      {!isSelectionMode && !hasVehicleRestriction && (
         <ThemedButton
           title={t('vehiclesScreen.addVehicle')}
           onPress={handleAddVehicle}
@@ -136,7 +144,7 @@ export default function MyVehiclesScreen() {
       <ThemedText style={styles.emptyText}>
         {isSelectionMode ? t('vehicles.noVehiclesForSelection') : t('vehiclesScreen.noVehicle')}
       </ThemedText>
-      {!isSelectionMode && (
+      {!isSelectionMode && !hasVehicleRestriction && (
         <ThemedButton
           title={t('vehiclesScreen.addVehicle')}
           onPress={handleAddVehicle}
@@ -158,6 +166,9 @@ export default function MyVehiclesScreen() {
           {isSelectionMode ? t('vehicles.selectVehicle') : t('profile.myVehicles')}
         </ThemedText>
       </View>
+
+      {/* Deeplink Restriction Banner */}
+      <DeeplinkRestrictionBanner />
 
       {vehicles.length === 0 ? (
         renderEmptyState()

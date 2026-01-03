@@ -4,6 +4,12 @@
 //  Example implementation showing how to integrate React Native E-Claims
 //  into a native Swift 5 iOS application.
 //
+//  Production Configuration:
+//  - Bundle ID: com.porsche.eclaims
+//  - Deeplink Scheme: porscheeclaims://
+//  - Universal Links: https://eclaims.porsche.com/
+//  - API Endpoint: https://api.eclaims.porsche.com
+//
 
 import UIKit
 import React
@@ -42,12 +48,22 @@ class MainViewController: UIViewController {
     // MARK: - Setup Methods
     
     private func setupReactNative() {
-        // Create React Native bridge
+        // Create React Native bridge with production configuration
         bridge = RCTBridge(delegate: self, launchOptions: nil)
         
         // Get E-Claims module
         eClaimsModule = bridge?.module(for: EClaimsIOSModule.self) as? EClaimsIOSModule
         eClaimsModule?.setHostDelegate(self)
+        
+        // Configure with production settings
+        let config: [String: Any] = [
+            "apiBaseUrl": "https://api.eclaims.porsche.com",
+            "environment": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug" ? "development" : "production",
+            "analyticsEnabled": true,
+            "masterAppScheme": "porsche-master-app",
+            "appScheme": "porscheeclaims",
+            "universalLinkHost": "eclaims.porsche.com",
+            "enableLogging": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug",
         
         // Create React Native root view
         reactView = RCTRootView(

@@ -178,9 +178,10 @@ export const submitStatement = async (
       payload: payload
     });
 
+    const headers = await createApiHeaders(token);
     const response = await fetch(`${STATEMENTS_API_BASE}/statements`, {
       method: 'POST',
-      headers: createApiHeaders(token),
+      headers,
       body: JSON.stringify(payload),
     });
 
@@ -221,9 +222,10 @@ export const getStatementStatus = async (
   token?: string
 ): Promise<ApiResponse<{ status: string; message: string }>> => {
   try {
+    const headers = await createApiHeaders(token);
     const response = await fetch(`${STATEMENTS_API_BASE}/statements/${statementId}/status`, {
       method: 'GET',
-      headers: createApiHeaders(token),
+      headers,
     });
 
     if (!response.ok) {
@@ -273,7 +275,7 @@ export const uploadStatementPhotos = async (
       }));
     });
 
-    const headers = createApiHeaders(token);
+    const headers = await createApiHeaders(token);
     delete headers['Content-Type']; // Let fetch set it for FormData
 
     const response = await fetch(`${STATEMENTS_API_BASE}/statements/${statementId}/photos`, {

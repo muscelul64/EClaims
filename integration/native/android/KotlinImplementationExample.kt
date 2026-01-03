@@ -3,6 +3,12 @@
  * 
  * Example implementation showing how to integrate React Native E-Claims
  * into a native Kotlin Android application.
+ * 
+ * Production Configuration:
+ * - Package: com.porsche.eclaims
+ * - Deeplink Scheme: porscheeclaims://
+ * - Universal Links: https://eclaims.porsche.com/
+ * - API Endpoint: https://api.eclaims.porsche.com
  */
 
 package com.yourcompany.yourapp.eclaims
@@ -11,8 +17,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.deactech.eclaims.native.EClaimsAndroidModule
-import com.deactech.eclaims.native.EClaimsHostListener
+import com.porsche.eclaims.native.EClaimsAndroidModule
+import com.porsche.eclaims.native.EClaimsHostListener
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactInstanceManager
@@ -88,9 +94,13 @@ class MainActivity : AppCompatActivity(), EClaimsHostListener {
     
     private fun initializeEClaims() {
         val config = mapOf(
-            "apiBaseUrl" to "https://your-api.com",
+            "apiBaseUrl" to "https://api.eclaims.porsche.com",
             "environment" to if (BuildConfig.DEBUG) "development" else "production",
             "analyticsEnabled" to true,
+            "masterAppScheme" to "porsche-master-app",
+            "appScheme" to "porscheeclaims",
+            "universalLinkHost" to "eclaims.porsche.com",
+            "enableLogging" to BuildConfig.DEBUG,
             "theme" to mapOf(
                 "primaryColor" to "#007AFF",
                 "darkMode" to isSystemInDarkMode()

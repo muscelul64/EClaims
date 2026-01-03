@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "porsche-eclaims",
+    "name": "Porsche E-Claims",
     "slug": "porsche-eclaims",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,13 +8,34 @@
     "scheme": "porscheeclaims",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "intentFilters": [
+      {
+        "action": "VIEW",
+        "data": [
+          {
+            "scheme": "deactecheclaims"
+          },
+          {
+            "scheme": "https",
+            "host": "eclaims.deactech.com"
+          }
+        ],
+        "category": [
+          "BROWSABLE",
+          "DEFAULT"
+        ]
+      }
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.deactech.porscheeclaims",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "5"
+      "buildNumber": "10",
+      "associatedDomains": [
+        "applinks:eclaims.deactech.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -29,12 +50,37 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "package": "com.deactech.porscheeclaims",
-      "versionCode": 11,
+      "versionCode": 24,
       "compileSdkVersion": 34,
-      "targetSdkVersion": 34
+      "targetSdkVersion": 34,
+      "minSdkVersion": 23,
+      "allowBackup": false,
+      "networkSecurityConfig": "network_security_config",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "porscheeclaims"
+            },
+            {
+              "scheme": "https",
+              "host": "eclaims.deactech.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",

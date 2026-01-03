@@ -1,6 +1,15 @@
-# Welcome to your Expo app 👋
+# Porsche E-Claims Mobile App 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Insurance claims mobile application for Porsche vehicles, built with Expo React Native and file-based routing.
+
+## App Configuration
+
+- **App Name**: Porsche E-Claims
+- **Version**: 10.0.0
+- **Slug**: porsche-eclaims
+- **Bundle ID**: com.deactech.porscheeclaims
+- **Deeplink Scheme**: porscheeclaims://
+- **Universal Links**: https://eclaims.deactech.com/
 
 ## Get started
 
@@ -24,6 +33,34 @@ In the output, you'll find options to open the app in a
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Build Commands
+
+```bash
+# Development builds
+npx expo run:android
+npx expo run:ios
+
+# Production builds
+eas build --platform android --profile production
+eas build --platform ios --profile production
+```
+
+## Project Structure
+
+- `app/` - Main app code with file-based routing
+- `components/` - Reusable UI components
+- `stores/` - Zustand state management
+- `utils/` - Utility functions and API clients
+- `assets/` - Images and static assets
+
+## Features
+
+- **Vehicle Management**: Add and manage Porsche vehicles
+- **Claims Processing**: Create and manage insurance claims
+- **Photo Documentation**: Capture and categorize damage photos
+- **Deeplink Support**: Single vehicle access via deeplinks
+- **Internationalization**: Multi-language support (English/Romanian)
 
 ## Get a fresh project
 
