@@ -32,6 +32,9 @@ fun JSONObject.toMap(): Map<String, Any> {
 /**
  * Secure Communication Utility for Android Master App
  * Matches the encryption implementation in Porsche E-Claims React Native app
+ *
+ * NOTE: This file is a template. Use scripts/generate-platform-code.sh to generate
+ * a version with your actual shared secret injected.
  */
 class SecureCommunication @JvmOverloads constructor(
     private val sharedSecret: String = "P0rsch3-ECl41ms-S3cur3-K3y-D3v3l0pm3nt-2026!@#"
