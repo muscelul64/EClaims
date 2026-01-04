@@ -11,11 +11,12 @@ import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore, Vehicle } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
 
-const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode }: {
+const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode, isDeleteDisabled }: {
   vehicle: Vehicle;
   onPress: () => void;
   onDelete: () => void;
   isSelectionMode?: boolean;
+  isDeleteDisabled?: boolean;
 }) => {
   const cardColor = useThemeColor({}, 'tint');
   const { t } = useTranslation();
@@ -39,8 +40,12 @@ const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode }: {
         </View>
         <View style={styles.vehicleActions}>
           {!isSelectionMode && (
-            <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
-              <ThemedText style={styles.deleteText}>🗑️</ThemedText>
+            <TouchableOpacity 
+              onPress={onDelete} 
+              style={[styles.deleteButton, isDeleteDisabled && styles.deleteButtonDisabled]}
+              disabled={isDeleteDisabled}
+            >
+              <ThemedText style={[styles.deleteText, isDeleteDisabled && styles.deleteTextDisabled]}>🗑️</ThemedText>
             </TouchableOpacity>
           )}
           {isSelectionMode && (
@@ -120,6 +125,7 @@ export default function MyVehiclesScreen() {
       onPress={() => handleEditVehicle(item)}
       onDelete={() => handleDeleteVehicle(item)}
       isSelectionMode={isSelectionMode}
+      isDeleteDisabled={hasVehicleRestriction}
     />
   );
 
@@ -259,8 +265,14 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 8,
   },
+  deleteButtonDisabled: {
+    opacity: 0.3,
+  },
   deleteText: {
     fontSize: 18,
+  },
+  deleteTextDisabled: {
+    opacity: 0.5,
   },
   selectText: {
     fontSize: 12,

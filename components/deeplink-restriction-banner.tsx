@@ -1,6 +1,7 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUserStore } from '@/stores/use-user-store';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -8,9 +9,10 @@ import { IconSymbol } from './ui/icon-symbol';
 
 export function DeeplinkRestrictionBanner() {
   const { user } = useUserStore();
-  const borderColor = useThemeColor({ light: '#ffd60a', dark: '#ffc107' });
-  const backgroundColor = useThemeColor({ light: '#fff3cd', dark: '#664d03' });
-  const textColor = useThemeColor({ light: '#664d03', dark: '#fff3cd' });
+  const { t } = useTranslation();
+  const borderColor = useThemeColor({ light: '#ffd60a', dark: '#ffc107' }, 'border');
+  const backgroundColor = useThemeColor({ light: '#fff3cd', dark: '#664d03' }, 'background');
+  const textColor = useThemeColor({ light: '#664d03', dark: '#fff3cd' }, 'text');
 
   if (!user.deeplinkContext?.hasVehicleRestriction) {
     return null;
@@ -21,7 +23,7 @@ export function DeeplinkRestrictionBanner() {
       <View style={styles.content}>
         <IconSymbol name="info.circle" size={20} color={textColor} />
         <ThemedText style={[styles.text, { color: textColor }]}>
-          Restricted access: Only 1 vehicle available via shared link
+          {t('vehicles.restrictedAccessMessage')}
         </ThemedText>
       </View>
     </ThemedView>

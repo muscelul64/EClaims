@@ -60,11 +60,41 @@ export default function DamageAssessmentScreen() {
   // Auto-select vehicle from deeplink context if available
   React.useEffect(() => {
     const deeplinkContext = user.deeplinkContext;
+    
+    // If we have a vehicle restriction from deeplink and no vehicle is currently selected
     if (deeplinkContext?.hasVehicleRestriction && deeplinkContext.allowedVehicleId && !selectedVehicle) {
       const filteredVehicles = getFilteredVehicles();
       const deeplinkVehicle = filteredVehicles.find(v => v.id === deeplinkContext.allowedVehicleId);
+      
       if (deeplinkVehicle) {
+        console.log('Auto-selecting vehicle from deeplink:', deeplinkVehicle.make, deeplinkVehicle.model);
         selectVehicle(deeplinkVehicle);
+      } else {
+        console.warn('Deeplink vehicle not found in filtered vehicles:', deeplinkContext.allowedVehicleId);
+      }
+    }
+    
+    // Alternative: If we have vehicle data in deeplink context but no matching vehicle by ID
+    // This can happen if the vehicle was just added via deeplink
+    if (deeplinkContext?.hasVehicleRestriction && deeplinkContext.vehicleData && !selectedVehicle) {
+      const filteredVehicles = getFilteredVehicles();
+      
+      // Try to find by VIN or license plate as backup
+      const vehicleByVin = filteredVehicles.find(v => 
+        v.vin && deeplinkContext.vehicleData.vin && 
+        v.vin === deeplinkContext.vehicleData.vin
+      );
+      
+      const vehicleByPlate = filteredVehicles.find(v => 
+        v.licensePlate && deeplinkContext.vehicleData.licensePlate && 
+        v.licensePlate === deeplinkContext.vehicleData.licensePlate
+      );
+      
+      const fallbackVehicle = vehicleByVin || vehicleByPlate || filteredVehicles[0];
+      
+      if (fallbackVehicle && !selectedVehicle) {
+        console.log('Auto-selecting fallback vehicle from deeplink data:', fallbackVehicle.make, fallbackVehicle.model);
+        selectVehicle(fallbackVehicle);
       }
     }
   }, [user.deeplinkContext, selectedVehicle, selectVehicle, getFilteredVehicles]);

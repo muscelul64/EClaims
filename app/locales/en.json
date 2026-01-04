@@ -96,7 +96,8 @@
     "validationRequired": "This field is required",
     "validationYear": "Please enter a valid year",
     "saveSuccess": "Vehicle saved successfully",
-    "deleteSuccess": "Vehicle deleted successfully"
+    "deleteSuccess": "Vehicle deleted successfully",
+    "restrictedAccessMessage": "Restricted access: Only 1 vehicle available via shared link"
   },
   "statements": {
     "title": "My Statements",

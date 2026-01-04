@@ -57,7 +57,7 @@
         "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "package": "com.deactech.porscheeclaims",
-      "versionCode": 24,
+      "versionCode": 25,
       "compileSdkVersion": 34,
       "targetSdkVersion": 34,
       "minSdkVersion": 23,

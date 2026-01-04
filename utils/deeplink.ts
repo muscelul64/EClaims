@@ -467,16 +467,40 @@ export class DeepLinkManager {
     // Damage Assessment
     this.registerHandler('damage', {
       pattern: 'porscheeclaims://damage',
-      handler: (params) => {
+      handler: async (params) => {
+        // If we have a specific vehicle ID, ensure it's selected for damage assessment
         if (params.vehicleId) {
-          router.push('/(main)/damage');
-          // Could add vehicle selection logic here
-        } else {
-          router.push('/(main)/damage');
+          try {
+            const { useVehiclesStore } = await import('@/stores/use-vehicles-store');
+            const { useUserStore } = await import('@/stores/use-user-store');
+            
+            const vehiclesStore = useVehiclesStore.getState();
+            const userStore = useUserStore.getState();
+            
+            // Find the vehicle and select it
+            const vehicle = vehiclesStore.vehicles.find(v => v.id === params.vehicleId);
+            if (vehicle) {
+              vehiclesStore.selectVehicle(vehicle);
+              
+              // Set deeplink context to indicate vehicle restriction
+              userStore.setDeeplinkContext({
+                hasVehicleRestriction: true,
+                allowedVehicleId: params.vehicleId,
+                originalUrl: params.originalUrl || '',
+              });
+              
+              console.log('Vehicle pre-selected for damage assessment:', vehicle.make, vehicle.model);
+            }
+          } catch (error) {
+            console.error('Error pre-selecting vehicle for damage assessment:', error);
+          }
         }
+        
+        // Navigate to damage assessment
+        router.push('/(main)/damage');
       },
       requiresAuth: true,
-      description: 'Start damage assessment'
+      description: 'Start damage assessment with optional vehicle pre-selection'
     });
 
     // Camera

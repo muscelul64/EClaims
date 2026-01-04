@@ -96,7 +96,8 @@
     "validationRequired": "Acest câmp este obligatoriu",
     "validationYear": "Vă rugăm să introduceți un an valid",
     "saveSuccess": "Vehicul salvat cu succes",
-    "deleteSuccess": "Vehicul șters cu succes"
+    "deleteSuccess": "Vehicul șters cu succes",
+    "restrictedAccessMessage": "Acces restricționat: Doar 1 vehicul disponibil prin link partajat"
   },
   "statements": {
     "title": "Declarațiile mele",
