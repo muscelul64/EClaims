@@ -7,9 +7,10 @@ import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCameraStore } from '@/stores/use-camera-store';
-import { useUserStore } from '@/stores/use-user-store';
+//import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
+import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 
 const DamageTypeCard = ({ 
   title, 
@@ -53,8 +54,8 @@ export default function DamageAssessmentScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { photos, getPhotosByType } = useCameraStore();
-  const { selectedVehicle, selectVehicle, getFilteredVehicles } = useVehiclesStore();
-  const { user } = useUserStore();
+  const { selectedVehicle} = useVehiclesStore();
+  //const { user } = useUserStore();
   const backgroundColor = useThemeColor({}, 'background');
   
   // Use the reusable deeplink vehicle auto-selection hook
