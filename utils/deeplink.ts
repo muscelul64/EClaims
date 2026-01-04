@@ -415,14 +415,18 @@ export class DeepLinkManager {
             const { useUserStore } = await import('@/stores/use-user-store');
             const userStore = useUserStore.getState();
             
-            userStore.setDeeplinkContext({
+            const contextData = {
               hasVehicleRestriction: true,
               allowedVehicleId: addedVehicle?.id,
               originalUrl: params.originalUrl || '',
               vehicleData: decodedVehicleData
-            });
+            };
+            
+            userStore.setDeeplinkContext(contextData);
             
             console.log('Vehicle added from deeplink:', decodedVehicleData.make, decodedVehicleData.model);
+            console.log('Deeplink context set:', contextData);
+            console.log('Added vehicle ID:', addedVehicle?.id);
           } catch (error) {
             console.error('Error processing vehicle data from deeplink:', error);
             Alert.alert('Error', 'Invalid vehicle data in link');
