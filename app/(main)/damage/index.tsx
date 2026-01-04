@@ -66,85 +66,129 @@ export default function DamageAssessmentScreen() {
   React.useEffect(() => {
     const deeplinkContext = user.deeplinkContext;
     
-    console.log('Damage Assessment - Checking auto-selection:', {
-      hasContext: !!deeplinkContext,
-      hasRestriction: deeplinkContext?.hasVehicleRestriction,
-      allowedVehicleId: deeplinkContext?.allowedVehicleId,
-      hasVehicleData: !!deeplinkContext?.vehicleData,
-      currentlySelected: !!selectedVehicle,
-      selectedVehicleId: selectedVehicle?.id
-    });
+    console.log('=== Damage Assessment Auto-Selection Debug ===');
+    console.log('Full user object:', JSON.stringify(user, null, 2));
+    console.log('Deeplink context:', JSON.stringify(deeplinkContext, null, 2));
+    console.log('Current selected vehicle:', selectedVehicle ? {
+      id: selectedVehicle.id,
+      make: selectedVehicle.make,
+      model: selectedVehicle.model
+    } : null);
     
     // If we already have a vehicle selected, don't override it
     if (selectedVehicle) {
-      console.log('Vehicle already selected:', selectedVehicle.make, selectedVehicle.model);
+      console.log('Vehicle already selected - skipping auto-selection');
       return;
     }
     
     // Function to attempt vehicle selection
     const attemptVehicleSelection = () => {
-      // If we have a vehicle restriction from deeplink and no vehicle is currently selected
-      if (deeplinkContext?.hasVehicleRestriction && deeplinkContext.allowedVehicleId) {
-        const filteredVehicles = getFilteredVehicles();
-        console.log('Filtered vehicles for auto-selection:', filteredVehicles.length, filteredVehicles.map(v => ({ id: v.id, make: v.make, model: v.model })));
-        
+      console.log('Attempting vehicle selection...');
+      
+      if (!deeplinkContext) {
+        console.log('No deeplink context found');
+        return false;
+      }
+      
+      // Check if we have any form of vehicle restriction/data
+      const hasVehicleFromDeeplink = deeplinkContext.hasVehicleRestriction || 
+                                    deeplinkContext.allowedVehicleId || 
+                                    deeplinkContext.vehicleData;
+      
+      console.log('Has vehicle from deeplink?', hasVehicleFromDeeplink);
+      
+      if (!hasVehicleFromDeeplink) {
+        console.log('No vehicle data in deeplink context');
+        return false;
+      }
+      
+      const filteredVehicles = getFilteredVehicles();
+      console.log('All filtered vehicles:', filteredVehicles.map(v => ({ 
+        id: v.id, 
+        make: v.make, 
+        model: v.model,
+        vin: v.vin,
+        licensePlate: v.licensePlate 
+      })));
+      
+      // Try to find by allowedVehicleId first
+      if (deeplinkContext.allowedVehicleId) {
+        console.log('Looking for vehicle with ID:', deeplinkContext.allowedVehicleId);
         const deeplinkVehicle = filteredVehicles.find(v => v.id === deeplinkContext.allowedVehicleId);
         
         if (deeplinkVehicle) {
-          console.log('Auto-selecting vehicle from deeplink by ID:', deeplinkVehicle.make, deeplinkVehicle.model, deeplinkVehicle.id);
+          console.log('✅ Found vehicle by ID - auto-selecting:', deeplinkVehicle.make, deeplinkVehicle.model);
           selectVehicle(deeplinkVehicle);
           return true;
         } else {
-          console.warn('Deeplink vehicle not found in filtered vehicles by ID:', deeplinkContext.allowedVehicleId);
+          console.warn('❌ Vehicle not found by allowedVehicleId:', deeplinkContext.allowedVehicleId);
         }
       }
       
-      // Alternative: If we have vehicle data in deeplink context but no matching vehicle by ID
-      if (deeplinkContext?.hasVehicleRestriction && deeplinkContext.vehicleData) {
-        const filteredVehicles = getFilteredVehicles();
+      // Try to find by vehicle data (VIN, license plate, etc.)
+      if (deeplinkContext.vehicleData) {
+        console.log('Looking for vehicle by data:', deeplinkContext.vehicleData);
         
-        // Try to find by VIN or license plate as backup
-        const vehicleByVin = filteredVehicles.find(v => 
-          v.vin && deeplinkContext.vehicleData.vin && 
-          v.vin === deeplinkContext.vehicleData.vin
-        );
+        const vehicleByVin = deeplinkContext.vehicleData.vin ? 
+          filteredVehicles.find(v => v.vin === deeplinkContext.vehicleData.vin) : null;
         
-        const vehicleByPlate = filteredVehicles.find(v => 
-          v.licensePlate && deeplinkContext.vehicleData.licensePlate && 
-          v.licensePlate === deeplinkContext.vehicleData.licensePlate
-        );
+        const vehicleByPlate = deeplinkContext.vehicleData.licensePlate ? 
+          filteredVehicles.find(v => v.licensePlate === deeplinkContext.vehicleData.licensePlate) : null;
         
-        const fallbackVehicle = vehicleByVin || vehicleByPlate || filteredVehicles[0];
+        const matchedVehicle = vehicleByVin || vehicleByPlate;
         
-        if (fallbackVehicle) {
-          console.log('Auto-selecting fallback vehicle from deeplink data:', fallbackVehicle.make, fallbackVehicle.model, fallbackVehicle.id);
-          selectVehicle(fallbackVehicle);
+        if (matchedVehicle) {
+          console.log('✅ Found vehicle by data - auto-selecting:', matchedVehicle.make, matchedVehicle.model);
+          selectVehicle(matchedVehicle);
+          return true;
+        } else {
+          console.warn('❌ Vehicle not found by VIN or plate');
+        }
+        
+        // If no specific match but we have vehicles in restriction mode, select the first one
+        if (filteredVehicles.length > 0) {
+          console.log('✅ Selecting first available vehicle in restriction mode:', filteredVehicles[0].make, filteredVehicles[0].model);
+          selectVehicle(filteredVehicles[0]);
           return true;
         }
       }
       
+      console.log('❌ No vehicle could be auto-selected');
       return false;
     };
     
     // Attempt immediate selection
+    console.log('Attempting immediate vehicle selection...');
     if (attemptVehicleSelection()) {
+      console.log('✅ Immediate selection successful');
       return;
     }
     
     // If immediate selection failed and we have deeplink context, try again after a brief delay
-    // This handles cases where vehicles are still being loaded
-    if (deeplinkContext?.hasVehicleRestriction) {
+    if (deeplinkContext && (deeplinkContext.hasVehicleRestriction || deeplinkContext.allowedVehicleId || deeplinkContext.vehicleData)) {
+      console.log('⏱️ Setting up retry timeout...');
       const retryTimeout = setTimeout(() => {
-        console.log('Retrying vehicle auto-selection after delay...');
+        console.log('🔄 Retrying vehicle auto-selection after delay...');
         if (!selectedVehicle) {
-          attemptVehicleSelection();
+          const success = attemptVehicleSelection();
+          if (success) {
+            console.log('✅ Retry selection successful');
+          } else {
+            console.log('❌ Retry selection failed');
+          }
+        } else {
+          console.log('Vehicle was selected elsewhere during retry delay');
         }
       }, 500);
       
-      return () => clearTimeout(retryTimeout);
+      return () => {
+        console.log('Cleaning up retry timeout');
+        clearTimeout(retryTimeout);
+      };
     }
     
-    console.log('No vehicle auto-selected - conditions not met');
+    console.log('❌ No valid conditions for auto-selection');
+    console.log('=== End Auto-Selection Debug ===');
   }, [user.deeplinkContext, selectedVehicle, selectVehicle, getFilteredVehicles]);
 
   const damageTypes = [

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Porsche E-Claims",
     "slug": "porsche-eclaims",
-    "version": "1.0.0",
+    "version": "1.0.30",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "porscheeclaims",
@@ -32,7 +32,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "10",
+      "buildNumber": "30",
       "associatedDomains": [
         "applinks:eclaims.deactech.com"
       ]
@@ -57,7 +57,7 @@
         "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "package": "com.deactech.porscheeclaims",
-      "versionCode": 26,
+      "versionCode": 30,
       "compileSdkVersion": 34,
       "targetSdkVersion": 34,
       "minSdkVersion": 23,
