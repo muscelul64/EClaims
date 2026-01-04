@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useThemeColor } from '@/hooks/use-theme-color';
 //import { useUserStore } from '@/stores/use-user-store';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,12 @@ export default function NewStatementScreen() {
     
     const backgroundColor = useThemeColor({}, 'background');
     const primaryColor = useThemeColor({}, 'tint');
+    
+    // Auto-select vehicle from deeplink if available
+    useDeeplinkVehicleAutoSelection({
+        enableDebugLogs: false,
+        screenName: 'New Statement'
+    });
     
     const timeArray = getTimeArray(t);
 

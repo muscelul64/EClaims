@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DeeplinkRestrictionBanner } from '@/components/deeplink-restriction-banner';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore, Vehicle } from '@/stores/use-vehicles-store';
@@ -73,6 +74,12 @@ export default function MyVehiclesScreen() {
   // Use filtered vehicles based on deeplink context
   const vehicles = getFilteredVehicles();
   const isSelectionMode = mode === 'select';
+  
+  // Auto-select vehicle from deeplink if available (useful for selection mode)
+  useDeeplinkVehicleAutoSelection({
+    enableDebugLogs: false,
+    screenName: 'My Vehicles'
+  });
 
   useEffect(() => {
     loadVehicles();

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { ClaimStatement, useStatementsStore } from '@/stores/use-statements-store';
 import { useTranslation } from 'react-i18next';
@@ -28,6 +29,12 @@ export default function StatementsScreen() {
   const { t } = useTranslation();
   const { statements, isLoading, loadStatements } = useStatementsStore();
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Auto-select vehicle from deeplink if available
+  useDeeplinkVehicleAutoSelection({
+    enableDebugLogs: false,
+    screenName: 'Statements'
+  });
   
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useCustomThemeColor({ light: '#ffffff', dark: '#1c1c1c' });

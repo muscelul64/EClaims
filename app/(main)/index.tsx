@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/hooks/use-auth';
+import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { runSecurityTests } from '@/utils/security-test-suite';
 
@@ -53,6 +54,12 @@ export default function MainScreen() {
   const { t, i18n } = useTranslation();
   const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#444' });
   const buildCardBg = useThemeColor({ light: '#f8f9fa', dark: '#1a1a1a' });
+  
+  // Auto-select vehicle from deeplink if available (applies to all navigation from main screen)
+  useDeeplinkVehicleAutoSelection({
+    enableDebugLogs: false,
+    screenName: 'Main Screen'
+  });
 
   const handleMenuPress = (option: MenuOption) => {
     router.push(option.route as any);
