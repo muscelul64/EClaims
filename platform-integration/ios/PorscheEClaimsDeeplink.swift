@@ -16,9 +16,37 @@ import UIKit
  */
 public class PorscheEClaimsDeeplink {
     
+    // MARK: - Environment Configuration
+    public enum Environment {
+        case development
+        case staging  
+        case production
+        
+        var universalLinkBase: String {
+            switch self {
+            case .development:
+                return "https://dev-eclaims.deactech.com"
+            case .staging:
+                return "https://staging-eclaims.deactech.com"
+            case .production:
+                return "https://eclaims.deactech.com"
+            }
+        }
+        
+        var appScheme: String {
+            switch self {
+            case .development:
+                return "porscheeclaims-dev"
+            case .staging:
+                return "porscheeclaims-staging"
+            case .production:
+                return "porscheeclaims"
+            }
+        }
+    }
+    
     // MARK: - Constants
-    private static let APP_SCHEME = "porscheeclaims"
-    private static let UNIVERSAL_LINK_BASE = "https://eclaims.deactech.com"
+    private static let DEFAULT_ENVIRONMENT: Environment = .production
     
     // Universal Links are the preferred method for iOS integration
     private static let DEFAULT_USE_UNIVERSAL_LINKS = true
@@ -74,6 +102,7 @@ public class PorscheEClaimsDeeplink {
      * Universal Links are preferred on iOS for better user experience and security
      * - Parameter vehicleData: Vehicle information to pass to E-Claims
      * - Parameter authToken: Optional authentication token for secure access
+     * - Parameter environment: Target environment (development, staging, production)
      * - Parameter useUniversalLink: Whether to use universal link (default: true, recommended)
      * - Parameter encrypt: Whether to encrypt the vehicle data (requires encryption key)
      * - Parameter encryptionKey: AES encryption key (required if encrypt = true)
@@ -82,6 +111,7 @@ public class PorscheEClaimsDeeplink {
     public static func generateVehicleDeeplink(
         vehicleData: VehicleData,
         authToken: AuthToken? = nil,
+        environment: Environment = DEFAULT_ENVIRONMENT,
         useUniversalLink: Bool = DEFAULT_USE_UNIVERSAL_LINKS,
         encrypt: Bool = false,
         encryptionKey: String? = nil
@@ -119,9 +149,13 @@ public class PorscheEClaimsDeeplink {
             }
             vehicleDataParam = "secureData=\(encryptedData)"
         } else {
-            // Use legacy base64 format
+            // Use legacy Base64URL format (URL-safe, no padding issues)
             let base64Data = Data(jsonString.utf8).base64EncodedString()
-            vehicleDataParam = "vehicleData=\(base64Data)"
+            let urlSafeData = base64Data
+                .replacingOccurrences(of: "+", with: "-")
+                .replacingOccurrences(of: "/", with: "_")
+                .replacingOccurrences(of: "=", with: "") // Remove padding
+            vehicleDataParam = "vehicleData=\(urlSafeData)"
         }
         
         // Generate auth token parameter if provided
@@ -134,15 +168,15 @@ public class PorscheEClaimsDeeplink {
         }
         
         // Build Universal Link URL (preferred) or fallback to custom scheme
-        let baseUrl = useUniversalLink ? UNIVERSAL_LINK_BASE : "\(APP_SCHEME)://"
+        let baseUrl = useUniversalLink ? environment.universalLinkBase : "\(environment.appScheme)://"
         let path = useUniversalLink ? "/vehicles" : "vehicles"
         
         let finalUrl = "\(baseUrl)\(path)?\(vehicleDataParam)\(tokenParam)"
         
         if useUniversalLink {
-            print("✅ Generated Universal Link: \(finalUrl)")
+            print("✅ Generated Universal Link (\(environment)): \(finalUrl)")
         } else {
-            print("⚠️ Generated custom scheme URL: \(finalUrl)")
+            print("⚠️ Generated custom scheme URL (\(environment)): \(finalUrl)")
         }
         
         return finalUrl
@@ -152,16 +186,18 @@ public class PorscheEClaimsDeeplink {
      * Generate a universal link to start damage assessment
      * - Parameter vehicleId: ID of the vehicle for damage assessment
      * - Parameter authToken: Authentication token for secure access
+     * - Parameter environment: Target environment (development, staging, production)
      * - Parameter useUniversalLink: Whether to use universal link (default: true, recommended)
      * - Returns: Complete universal link URL as String
      */
     public static func generateDamageAssessmentDeeplink(
         vehicleId: String,
         authToken: AuthToken,
+        environment: Environment = DEFAULT_ENVIRONMENT,
         useUniversalLink: Bool = DEFAULT_USE_UNIVERSAL_LINKS
     ) -> String {
         let tokenParam = generateAuthTokenData(authToken)
-        let baseUrl = useUniversalLink ? UNIVERSAL_LINK_BASE : "\(APP_SCHEME)://"
+        let baseUrl = useUniversalLink ? environment.universalLinkBase : "\(environment.appScheme)://"
         let path = useUniversalLink ? "/damage" : "damage"
         
         return "\(baseUrl)\(path)?vehicleId=\(vehicleId)&token=\(tokenParam)"
@@ -235,7 +271,12 @@ public class PorscheEClaimsDeeplink {
             return ""
         }
         
-        return Data(tokenString.utf8).base64EncodedString()
+        // Use Base64URL encoding for URL safety (no padding issues)
+        let base64Data = Data(tokenString.utf8).base64EncodedString()
+        return base64Data
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "") // Remove padding
     }
     
     private static func encryptVehicleData(_ data: String, key: String) -> String? {
@@ -329,10 +370,11 @@ public class PorscheEClaimsDeeplink {
      sessionId: "session456"
  )
  
- // 3. Generate Universal Link (recommended approach)
+ // 3. Generate Universal Link for TestFlight/Staging (recommended for testing)
  if let universalLink = PorscheEClaimsDeeplink.generateVehicleDeeplink(
      vehicleData: vehicleData,
      authToken: authToken,
+     environment: .staging, // Use .staging for TestFlight, .production for App Store
      // useUniversalLink defaults to true for iOS
      encrypt: true,
      encryptionKey: "your-encryption-key-here"
@@ -349,10 +391,11 @@ public class PorscheEClaimsDeeplink {
      }
  }
  
- // Alternative: Generate damage assessment Universal Link
+ // Alternative: Generate damage assessment Universal Link for staging
  let damageUniversalLink = PorscheEClaimsDeeplink.generateDamageAssessmentDeeplink(
      vehicleId: "vehicle123",
-     authToken: authToken
+     authToken: authToken,
+     environment: .staging // Match your TestFlight environment
      // useUniversalLink defaults to true
  )
  ```

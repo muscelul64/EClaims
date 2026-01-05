@@ -13,11 +13,19 @@
         "action": "VIEW",
         "data": [
           {
-            "scheme": "deactecheclaims"
+            "scheme": "porscheeclaims"
           },
           {
             "scheme": "https",
             "host": "eclaims.deactech.com"
+          },
+          {
+            "scheme": "https",
+            "host": "staging-eclaims.deactech.com"
+          },
+          {
+            "scheme": "https",
+            "host": "dev-eclaims.deactech.com"
           }
         ],
         "category": [
@@ -32,9 +40,11 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "33",
+      "buildNumber": "37",
       "associatedDomains": [
-        "applinks:eclaims.deactech.com"
+        "applinks:eclaims.deactech.com",
+        "applinks:staging-eclaims.deactech.com",
+        "applinks:dev-eclaims.deactech.com"
       ]
     },
     "android": {
@@ -73,6 +83,14 @@
             {
               "scheme": "https",
               "host": "eclaims.deactech.com"
+            },
+            {
+              "scheme": "https",
+              "host": "staging-eclaims.deactech.com"
+            },
+            {
+              "scheme": "https",
+              "host": "dev-eclaims.deactech.com"
             }
           ],
           "category": [

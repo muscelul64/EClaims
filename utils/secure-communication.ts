@@ -19,6 +19,47 @@ export interface SecurePayload {
   signature: string;
 }
 
+/**
+ * Base64URL encoding utilities for URL-safe transmission
+ * Base64URL replaces + with -, / with _, and removes padding =
+ */
+export class Base64URL {
+  /**
+   * Encode data to Base64URL format (URL-safe, no padding)
+   */
+  static encode(data: string): string {
+    const base64 = btoa(data);
+    return base64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, ''); // Remove padding
+  }
+
+  /**
+   * Decode Base64URL format back to original data
+   */
+  static decode(data: string): string {
+    // Restore standard Base64 format
+    let base64 = data
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    
+    return atob(base64);
+  }
+
+  /**
+   * Check if string is valid Base64URL format
+   */
+  static isValid(data: string): boolean {
+    return /^[A-Za-z0-9\-_]*$/.test(data);
+  }
+}
+
 export class SecureCommunication {
   private static instance: SecureCommunication;
   public config: EncryptionConfig;
@@ -74,8 +115,8 @@ export class SecureCommunication {
         signature
       };
       
-      // Encode as base64 for URL safety
-      return btoa(JSON.stringify(payload));
+      // Encode as Base64URL for URL safety (no padding issues)
+      return Base64URL.encode(JSON.stringify(payload));
       
     } catch (error) {
       console.error('Encryption failed:', error);
@@ -88,8 +129,14 @@ export class SecureCommunication {
    */
   decryptData<T = any>(encryptedData: string): T {
     try {
-      // Decode from base64
-      const payload: SecurePayload = JSON.parse(atob(encryptedData));
+      // Try Base64URL decode first, fallback to standard Base64
+      let payload: SecurePayload;
+      try {
+        payload = JSON.parse(Base64URL.decode(encryptedData));
+      } catch {
+        // Fallback to standard Base64 for backward compatibility
+        payload = JSON.parse(atob(encryptedData));
+      }
       
       // Validate timestamp (reject old data)
       const maxAge = 5 * 60 * 1000; // 5 minutes
@@ -210,12 +257,23 @@ export class SecureCommunication {
         return null;
       }
     } else {
-      // Try legacy base64 decoding
-      console.log('Detected legacy base64 vehicle data');
+      // Try Base64URL decoding first (new URL-safe format)
+      console.log('Attempting Base64URL vehicle data decoding');
+      if (Base64URL.isValid(data)) {
+        try {
+          const decoded = Base64URL.decode(data);
+          return JSON.parse(decoded);
+        } catch (error) {
+          console.log('Base64URL decoding failed, trying standard Base64');
+        }
+      }
+      
+      // Fallback to legacy standard base64 decoding
+      console.log('Attempting legacy base64 vehicle data decoding');
       try {
         return JSON.parse(atob(data));
       } catch (error) {
-        console.error('Legacy base64 decoding failed:', error);
+        console.error('All vehicle data decoding methods failed:', error);
         return null;
       }
     }
@@ -246,6 +304,92 @@ export class SecureCommunication {
       console.error('Failed to extract vehicle data:', error);
       Alert.alert('Security Error', 'Unable to process vehicle data securely');
       return null;
+    }
+  }
+
+  /**
+   * Encode vehicle data in Base64URL format for URL-safe transmission
+   * This avoids the query parameter parsing issues with standard Base64 padding
+   */
+  encodeVehicleDataForURL(vehicleData: any): string {
+    const jsonString = JSON.stringify(vehicleData);
+    return Base64URL.encode(jsonString);
+  }
+
+  /**
+   * Legacy Base64URL vehicle data encoding (maintains URL safety)
+   * @deprecated Use encodeVehicleDataForURL for new implementations
+   */
+  legacyEncodeVehicleData(vehicleData: any): string {
+    const jsonString = JSON.stringify(vehicleData);
+    return Base64URL.encode(jsonString);
+  }
+
+  /**
+   * Legacy Base64URL vehicle data decoding (URL-safe fallback)
+   * @deprecated Use smartExtractVehicleData for new implementations
+   */
+  legacyDecodeVehicleData(encodedData: string): any {
+    try {
+      if (Base64URL.isValid(encodedData)) {
+        const decoded = Base64URL.decode(encodedData);
+        return JSON.parse(decoded);
+      } else {
+        // Still fallback to standard Base64 for very old data
+        return JSON.parse(atob(encodedData));
+      }
+    } catch (error) {
+      console.error('Legacy vehicle data decoding failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Legacy Base64URL auth token creation (URL-safe)
+   * @deprecated Use createSecureAuthToken for new implementations
+   */
+  legacyCreateAuthToken(tokenData: any): string {
+    const timestamp = Date.now();
+    const authPayload = {
+      ...tokenData,
+      timestamp,
+      nonce: Math.random().toString(36).substring(2, 15)
+    };
+    const jsonString = JSON.stringify(authPayload);
+    return Base64URL.encode(jsonString);
+  }
+
+  /**
+   * Legacy Base64URL auth token validation (URL-safe)
+   * @deprecated Use validateSecureAuthToken for new implementations
+   */
+  legacyValidateAuthToken(encodedToken: string): any {
+    try {
+      if (Base64URL.isValid(encodedToken)) {
+        const decoded = Base64URL.decode(encodedToken);
+        return JSON.parse(decoded);
+      } else {
+        // Fallback to standard Base64 for very old tokens
+        return JSON.parse(atob(encodedToken));
+      }
+    } catch (error) {
+      console.error('Legacy auth token validation failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a URL-safe vehicle data parameter string
+   */
+  createVehicleDataParam(vehicleData: any, useEncryption: boolean = false): string {
+    if (useEncryption) {
+      // Use encrypted format with Base64URL encoding
+      const encryptedData = this.encryptData({ vehicleData });
+      return `secureData=${encodeURIComponent(encryptedData)}`;
+    } else {
+      // Use Base64URL format to avoid padding issues
+      const urlSafeData = this.encodeVehicleDataForURL(vehicleData);
+      return `vehicleData=${encodeURIComponent(urlSafeData)}`;
     }
   }
 }
@@ -337,3 +481,9 @@ export const encryptForDeeplink = (data: any): string => secureCommunication.enc
 export const decryptFromDeeplink = <T = any>(data: string): T => secureCommunication.decryptData<T>(data);
 export const createSecureToken = (payload: any): string => secureJWT.createToken(payload);
 export const verifySecureToken = (token: string): any => secureJWT.verifyToken(token);
+
+// Legacy Base64URL helper functions (URL-safe, no padding conflicts)
+export const legacyEncodeVehicleData = (vehicleData: any): string => secureCommunication.legacyEncodeVehicleData(vehicleData);
+export const legacyDecodeVehicleData = (encodedData: string): any => secureCommunication.legacyDecodeVehicleData(encodedData);
+export const legacyCreateAuthToken = (tokenData: any): string => secureCommunication.legacyCreateAuthToken(tokenData);
+export const legacyValidateAuthToken = (encodedToken: string): any => secureCommunication.legacyValidateAuthToken(encodedToken);

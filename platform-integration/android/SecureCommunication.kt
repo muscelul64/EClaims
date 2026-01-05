@@ -13,6 +13,47 @@ import javax.crypto.spec.SecretKeySpec
 import java.util.*
 
 /**
+ * Base64URL encoding utilities for URL-safe transmission
+ * Base64URL replaces + with -, / with _, and removes padding =
+ */
+object Base64URL {
+    /**
+     * Encode data to Base64URL format (URL-safe, no padding)
+     */
+    fun encode(data: String): String {
+        val base64 = Base64.encodeToString(data.toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP)
+        return base64
+            .replace('+', '-')
+            .replace('/', '_')
+            .replace("=", "") // Remove padding
+    }
+
+    /**
+     * Decode Base64URL format back to original data
+     */
+    fun decode(data: String): String {
+        // Restore standard Base64 format
+        var base64 = data
+            .replace('-', '+')
+            .replace('_', '/')
+        
+        // Add padding if needed
+        while (base64.length % 4 != 0) {
+            base64 += "="
+        }
+        
+        return String(Base64.decode(base64, Base64.NO_WRAP), StandardCharsets.UTF_8)
+    }
+
+    /**
+     * Check if string is valid Base64URL format
+     */
+    fun isValid(data: String): Boolean {
+        return data.matches(Regex("[A-Za-z0-9\\-_]*"))
+    }
+}
+
+/**
  * JSONObject extension to convert to Map
  */
 fun JSONObject.toMap(): Map<String, Any> {
@@ -104,16 +145,16 @@ class SecureCommunication @JvmOverloads constructor(
      * Generate legacy deeplink URL (for backward compatibility)
      */
     fun generateLegacyDeeplink(vehicleData: Map<String, Any>, authToken: String? = null): String {
-        val legacyVehicleData = Base64.encodeToString(
-            JSONObject(vehicleData).toString().toByteArray(StandardCharsets.UTF_8), 
-            Base64.NO_WRAP
-        )
+        // Use Base64URL encoding to avoid URL parsing issues with padding
+        val urlSafeVehicleData = Base64URL.encode(JSONObject(vehicleData).toString())
         
         val urlBuilder = StringBuilder("${environment.appScheme}://vehicles?vehicleData=")
-        urlBuilder.append(android.net.Uri.encode(legacyVehicleData))
+        urlBuilder.append(android.net.Uri.encode(urlSafeVehicleData))
         
         authToken?.let {
-            urlBuilder.append("&token=").append(android.net.Uri.encode(it))
+            // Also encode auth token in Base64URL format
+            val urlSafeToken = Base64URL.encode(it)
+            urlBuilder.append("&token=").append(android.net.Uri.encode(urlSafeToken))
         }
         
         return urlBuilder.toString()
@@ -127,11 +168,9 @@ class SecureCommunication @JvmOverloads constructor(
             val encryptedVehicleData = encryptVehicleData(vehicleData)
             "secureData=${android.net.Uri.encode(encryptedVehicleData)}"
         } else {
-            val legacyVehicleData = Base64.encodeToString(
-                JSONObject(vehicleData).toString().toByteArray(StandardCharsets.UTF_8), 
-                Base64.NO_WRAP
-            )
-            "vehicleData=${android.net.Uri.encode(legacyVehicleData)}"
+            // Use Base64URL encoding to avoid URL parsing issues with padding
+            val urlSafeVehicleData = Base64URL.encode(JSONObject(vehicleData).toString())
+            "vehicleData=${android.net.Uri.encode(urlSafeVehicleData)}"
         }
         
         val urlBuilder = StringBuilder("https://${environment.universalLinkHost}/vehicles?${vehicleDataParam}")

@@ -24,6 +24,13 @@ private static let UNIVERSAL_LINK_BASE = "https://dev-eclaims.deactech.com"
 - **Staging**: `staging-eclaims.deactech.com`  
 - **Development**: `dev-eclaims.deactech.com`
 
+**IMPORTANT**: Ensure your Apple App Site Association (AASA) files are hosted at:
+- `https://eclaims.deactech.com/.well-known/apple-app-site-association`
+- `https://staging-eclaims.deactech.com/.well-known/apple-app-site-association`  
+- `https://dev-eclaims.deactech.com/.well-known/apple-app-site-association`
+
+See [../../docs/APPLE-UNIVERSAL-LINKS-SETUP.md](../../docs/APPLE-UNIVERSAL-LINKS-SETUP.md) for complete configuration instructions.
+
 ## 📦 Installation
 
 ### Option 1: Add Swift File to Project

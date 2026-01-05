@@ -1,0 +1,34 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "U8777999GM.com.deactech.porscheeclaims"
+        ],
+        "components": [
+          {
+            "/": "/vehicles*",
+            "comment": "Vehicle deeplinks for Porsche E-Claims (Staging)"
+          },
+          {
+            "/": "/damage*", 
+            "comment": "Damage assessment deeplinks (Staging)"
+          },
+          {
+            "/": "/statements*",
+            "comment": "Insurance statement deeplinks (Staging)"
+          },
+          {
+            "/": "/camera*",
+            "comment": "Camera functionality deeplinks (Staging)"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "U8777999GM.com.deactech.porscheeclaims"
+    ]
+  }
+}
