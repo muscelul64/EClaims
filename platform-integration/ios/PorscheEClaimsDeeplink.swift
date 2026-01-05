@@ -18,7 +18,10 @@ public class PorscheEClaimsDeeplink {
     
     // MARK: - Constants
     private static let APP_SCHEME = "porscheeclaims"
-    private static let UNIVERSAL_LINK_BASE = "https://eclaims.porsche.com"
+    private static let UNIVERSAL_LINK_BASE = "https://eclaims.deactech.com"
+    
+    // Universal Links are the preferred method for iOS integration
+    private static let DEFAULT_USE_UNIVERSAL_LINKS = true
     
     // MARK: - Vehicle Data Structure
     public struct VehicleData {
@@ -67,18 +70,19 @@ public class PorscheEClaimsDeeplink {
     // MARK: - Deeplink Generation
     
     /**
-     * Generate a deeplink URL to launch E-Claims with vehicle data
+     * Generate a universal link URL to launch E-Claims with vehicle data
+     * Universal Links are preferred on iOS for better user experience and security
      * - Parameter vehicleData: Vehicle information to pass to E-Claims
      * - Parameter authToken: Optional authentication token for secure access
-     * - Parameter useUniversalLink: Whether to use universal link instead of custom scheme
+     * - Parameter useUniversalLink: Whether to use universal link (default: true, recommended)
      * - Parameter encrypt: Whether to encrypt the vehicle data (requires encryption key)
      * - Parameter encryptionKey: AES encryption key (required if encrypt = true)
-     * - Returns: Complete deeplink URL as String
+     * - Returns: Complete universal link URL as String
      */
     public static func generateVehicleDeeplink(
         vehicleData: VehicleData,
         authToken: AuthToken? = nil,
-        useUniversalLink: Bool = true,
+        useUniversalLink: Bool = DEFAULT_USE_UNIVERSAL_LINKS,
         encrypt: Bool = false,
         encryptionKey: String? = nil
     ) -> String? {
@@ -129,24 +133,32 @@ public class PorscheEClaimsDeeplink {
             tokenParam = ""
         }
         
-        // Build URL
+        // Build Universal Link URL (preferred) or fallback to custom scheme
         let baseUrl = useUniversalLink ? UNIVERSAL_LINK_BASE : "\(APP_SCHEME)://"
         let path = useUniversalLink ? "/vehicles" : "vehicles"
         
-        return "\(baseUrl)\(path)?\(vehicleDataParam)\(tokenParam)"
+        let finalUrl = "\(baseUrl)\(path)?\(vehicleDataParam)\(tokenParam)"
+        
+        if useUniversalLink {
+            print("✅ Generated Universal Link: \(finalUrl)")
+        } else {
+            print("⚠️ Generated custom scheme URL: \(finalUrl)")
+        }
+        
+        return finalUrl
     }
     
     /**
-     * Generate a deeplink to start damage assessment
+     * Generate a universal link to start damage assessment
      * - Parameter vehicleId: ID of the vehicle for damage assessment
      * - Parameter authToken: Authentication token for secure access
-     * - Parameter useUniversalLink: Whether to use universal link instead of custom scheme
-     * - Returns: Complete deeplink URL as String
+     * - Parameter useUniversalLink: Whether to use universal link (default: true, recommended)
+     * - Returns: Complete universal link URL as String
      */
     public static func generateDamageAssessmentDeeplink(
         vehicleId: String,
         authToken: AuthToken,
-        useUniversalLink: Bool = true
+        useUniversalLink: Bool = DEFAULT_USE_UNIVERSAL_LINKS
     ) -> String {
         let tokenParam = generateAuthTokenData(authToken)
         let baseUrl = useUniversalLink ? UNIVERSAL_LINK_BASE : "\(APP_SCHEME)://"
@@ -156,36 +168,53 @@ public class PorscheEClaimsDeeplink {
     }
     
     /**
-     * Launch E-Claims app with the generated deeplink
-     * - Parameter url: Deeplink URL to open
+     * Launch E-Claims app with the generated universal link
+     * Universal Links provide better user experience and work even if app is not installed
+     * - Parameter url: Universal link or custom scheme URL to open
      * - Parameter completion: Completion handler with success/failure result
      */
     public static func launchEClaims(url: String, completion: @escaping (Bool) -> Void) {
-        guard let deepUrl = URL(string: url) else {
-            print("❌ Invalid deeplink URL: \(url)")
+        guard let linkUrl = URL(string: url) else {
+            print("❌ Invalid URL format: \(url)")
             completion(false)
             return
         }
         
-        // Check if E-Claims app is installed
-        if UIApplication.shared.canOpenURL(deepUrl) {
-            UIApplication.shared.open(deepUrl, options: [:]) { success in
+        // Universal Links work differently than custom schemes
+        let isUniversalLink = url.hasPrefix("https://")
+        
+        if isUniversalLink {
+            // Universal Link - always works, redirects to App Store if app not installed
+            UIApplication.shared.open(linkUrl, options: [:]) { success in
                 if success {
-                    print("✅ E-Claims app launched successfully")
+                    print("✅ Universal Link opened successfully")
                 } else {
-                    print("❌ Failed to launch E-Claims app")
+                    print("❌ Failed to open Universal Link")
                 }
                 completion(success)
             }
         } else {
-            // App not installed, redirect to App Store
-            let appStoreUrl = "https://apps.apple.com/app/porsche-eclaims/id123456789" // Replace with actual App Store ID
-            if let storeUrl = URL(string: appStoreUrl) {
-                UIApplication.shared.open(storeUrl, options: [:]) { _ in
-                    completion(false) // App not installed
+            // Custom scheme - check if app is installed first
+            if UIApplication.shared.canOpenURL(linkUrl) {
+                UIApplication.shared.open(linkUrl, options: [:]) { success in
+                    if success {
+                        print("✅ E-Claims app launched via custom scheme")
+                    } else {
+                        print("❌ Failed to launch E-Claims app")
+                    }
+                    completion(success)
                 }
             } else {
-                completion(false)
+                // App not installed, redirect to App Store
+                print("⚠️ E-Claims app not installed, redirecting to App Store")
+                let appStoreUrl = "https://apps.apple.com/app/porsche-eclaims/id123456789" // Replace with actual App Store ID
+                if let storeUrl = URL(string: appStoreUrl) {
+                    UIApplication.shared.open(storeUrl, options: [:]) { _ in
+                        completion(false) // App not installed
+                    }
+                } else {
+                    completion(false)
+                }
             }
         }
     }
@@ -300,31 +329,31 @@ public class PorscheEClaimsDeeplink {
      sessionId: "session456"
  )
  
- // 3. Generate encrypted deeplink
- if let deeplink = PorscheEClaimsDeeplink.generateVehicleDeeplink(
+ // 3. Generate Universal Link (recommended approach)
+ if let universalLink = PorscheEClaimsDeeplink.generateVehicleDeeplink(
      vehicleData: vehicleData,
      authToken: authToken,
-     useUniversalLink: true,
+     // useUniversalLink defaults to true for iOS
      encrypt: true,
      encryptionKey: "your-encryption-key-here"
  ) {
-     print("Generated deeplink: \(deeplink)")
+     print("Generated Universal Link: \(universalLink)")
      
-     // 4. Launch E-Claims app
-     PorscheEClaimsDeeplink.launchEClaims(url: deeplink) { success in
+     // 4. Launch E-Claims app via Universal Link
+     PorscheEClaimsDeeplink.launchEClaims(url: universalLink) { success in
          if success {
-             print("E-Claims launched successfully")
+             print("E-Claims launched successfully via Universal Link")
          } else {
              print("Failed to launch E-Claims or app not installed")
          }
      }
  }
  
- // Alternative: Generate damage assessment deeplink
- let damageDeeplink = PorscheEClaimsDeeplink.generateDamageAssessmentDeeplink(
+ // Alternative: Generate damage assessment Universal Link
+ let damageUniversalLink = PorscheEClaimsDeeplink.generateDamageAssessmentDeeplink(
      vehicleId: "vehicle123",
-     authToken: authToken,
-     useUniversalLink: true
+     authToken: authToken
+     // useUniversalLink defaults to true
  )
  ```
  */

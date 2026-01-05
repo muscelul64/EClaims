@@ -7,8 +7,8 @@
 //  Production Configuration:
 //  - Bundle ID: com.porsche.eclaims
 //  - Deeplink Scheme: porscheeclaims://
-//  - Universal Links: https://eclaims.porsche.com/
-//  - API Endpoint: https://api.eclaims.porsche.com
+//  - Universal Links: https://eclaims.deactech.com/
+//  - API Endpoint: https://api.eclaims.deactech.com
 //
 
 import UIKit
@@ -57,12 +57,12 @@ class MainViewController: UIViewController {
         
         // Configure with production settings
         let config: [String: Any] = [
-            "apiBaseUrl": "https://api.eclaims.porsche.com",
+            "apiBaseUrl": "https://api.eclaims.deactech.com",
             "environment": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug" ? "development" : "production",
             "analyticsEnabled": true,
             "masterAppScheme": "porsche-master-app",
             "appScheme": "porscheeclaims",
-            "universalLinkHost": "eclaims.porsche.com",
+            "universalLinkHost": "eclaims.deactech.com",
             "enableLogging": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug",
         
         // Create React Native root view

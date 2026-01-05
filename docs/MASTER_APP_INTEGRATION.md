@@ -126,7 +126,7 @@ await Linking.openURL(url);
   \"expo\": {
     \"scheme\": \"porscheeclaims\",
     \"ios\": {
-      \"associatedDomains\": [\"applinks:eclaims.porsche.com\"]
+      \"associatedDomains\": [\"applinks:eclaims.deactech.com\"]
     },
     \"android\": {
       \"intentFilters\": [
@@ -134,7 +134,7 @@ await Linking.openURL(url);
           \"action\": \"VIEW\",
           \"data\": [
             { \"scheme\": \"porscheeclaims\" },
-            { \"scheme\": \"https\", \"host\": \"eclaims.porsche.com\" }
+            { \"scheme\": \"https\", \"host\": \"eclaims.deactech.com\" }
           ],
           \"category\": [\"BROWSABLE\", \"DEFAULT\"]
         }
@@ -239,7 +239,7 @@ if (!tokenValid) {
 adb shell am start -W -a android.intent.action.VIEW -d \"porscheeclaims://master-auth?token=test_token\" com.porsche.eclaims
 
 # Test iOS universal link
-xcrun simctl openurl booted \"https://eclaims.porsche.com/master-auth?token=test_token\"
+xcrun simctl openurl booted \"https://eclaims.deactech.com/master-auth?token=test_token\"
 ```
 ### Integration Testing Components
 

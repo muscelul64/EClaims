@@ -76,7 +76,7 @@ npm run build:android:preview
 
 ### Intent Filters
 - Custom scheme: `porscheeclaims://`
-- Universal links: `https://eclaims.porsche.com/`
+- Universal links: `https://eclaims.deactech.com/`
 
 ## Debugging
 
@@ -146,7 +146,7 @@ Android handles deeplinks through intent filters configured in `app.json`:
     "action": "VIEW",
     "data": [
       { "scheme": "porscheeclaims" },
-      { "scheme": "https", "host": "eclaims.porsche.com" }
+      { "scheme": "https", "host": "eclaims.deactech.com" }
     ],
     "category": ["BROWSABLE", "DEFAULT"]
   }
@@ -159,7 +159,7 @@ Android handles deeplinks through intent filters configured in `app.json`:
 adb shell am start -W -a android.intent.action.VIEW -d "porscheeclaims://master-auth?token=test_token" com.deactech.porscheeclaims
 
 # Test universal link
-adb shell am start -W -a android.intent.action.VIEW -d "https://eclaims.porsche.com/master-auth?token=test_token" com.deactech.porscheeclaims
+adb shell am start -W -a android.intent.action.VIEW -d "https://eclaims.deactech.com/master-auth?token=test_token" com.deactech.porscheeclaims
 ```
 
 ## Production Deployment

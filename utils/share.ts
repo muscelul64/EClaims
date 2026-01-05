@@ -143,7 +143,7 @@ export class ShareManager {
     try {
       // This could integrate with the deeplink parser
       // For now, basic parsing
-      if (url.includes('eclaims.porsche.com') || url.includes('porscheeclaims://')) {
+      if (url.includes('eclaims.deactech.com') || url.includes('porscheeclaims://')) {
         return { action: 'shared_link', params: { url } };
       }
       return null;

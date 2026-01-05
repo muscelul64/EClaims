@@ -1,6 +1,28 @@
-# iOS Deeplink Integration for Porsche E-Claims
+# iOS Universal Links Integration for Porsche E-Claims
 
-This document explains how to integrate Porsche E-Claims deeplink functionality into your iOS master app.
+This document explains how to integrate Porsche E-Claims Universal Links functionality into your iOS master app. Universal Links provide the best user experience on iOS and are the recommended integration method.
+
+## ⚙️ Environment Configuration
+
+**IMPORTANT**: Before using this library, you must configure the Universal Link domain for your target environment:
+
+In `PorscheEClaimsDeeplink.swift`, update the `UNIVERSAL_LINK_BASE` constant:
+
+```swift
+// Production (default)
+private static let UNIVERSAL_LINK_BASE = "https://eclaims.deactech.com"
+
+// Staging 
+private static let UNIVERSAL_LINK_BASE = "https://staging-eclaims.deactech.com"
+
+// Development
+private static let UNIVERSAL_LINK_BASE = "https://dev-eclaims.deactech.com"
+```
+
+### Supported Environments:
+- **Production**: `eclaims.deactech.com`
+- **Staging**: `staging-eclaims.deactech.com`  
+- **Development**: `dev-eclaims.deactech.com`
 
 ## 📦 Installation
 
@@ -24,7 +46,7 @@ dependencies: [
 
 ## 🚀 Quick Start
 
-### 1. Basic Vehicle Deeplink
+### 1. Basic Vehicle Universal Link
 
 ```swift
 // Create vehicle data
@@ -35,19 +57,19 @@ let vehicleData = PorscheEClaimsDeeplink.VehicleData(
     model: "911 Carrera"
 )
 
-// Generate deeplink
+// Generate Universal Link (default behavior)
 if let url = PorscheEClaimsDeeplink.generateVehicleDeeplink(
-    vehicleData: vehicleData,
-    useUniversalLink: true
+    vehicleData: vehicleData
+    // useUniversalLink defaults to true on iOS
 ) {
-    // Launch E-Claims
+    // Launch E-Claims via Universal Link
     PorscheEClaimsDeeplink.launchEClaims(url: url) { success in
         print("Launch success: \\(success)")
     }
 }
 ```
 
-### 2. Secure Deeplink with Authentication
+### 2. Secure Universal Link with Authentication
 
 ```swift
 // Create authentication token
@@ -71,17 +93,17 @@ let vehicleData = PorscheEClaimsDeeplink.VehicleData(
     policyNumber: "POL-2024-001234"
 )
 
-// Generate encrypted deeplink
+// Generate encrypted Universal Link (recommended)
 if let url = PorscheEClaimsDeeplink.generateVehicleDeeplink(
     vehicleData: vehicleData,
     authToken: authToken,
-    useUniversalLink: true,
+    // useUniversalLink defaults to true
     encrypt: true,
     encryptionKey: "your-256-bit-encryption-key"
 ) {
     PorscheEClaimsDeeplink.launchEClaims(url: url) { success in
         if success {
-            print("✅ E-Claims launched with encrypted vehicle data")
+            print("✅ E-Claims launched with encrypted vehicle data via Universal Link")
         } else {
             print("❌ Failed to launch E-Claims")
         }
@@ -99,8 +121,8 @@ let authToken = PorscheEClaimsDeeplink.AuthToken(
 
 let damageUrl = PorscheEClaimsDeeplink.generateDamageAssessmentDeeplink(
     vehicleId: "vehicle123",
-    authToken: authToken,
-    useUniversalLink: true
+    authToken: authToken
+    // useUniversalLink defaults to true
 )
 
 PorscheEClaimsDeeplink.launchEClaims(url: damageUrl) { success in
@@ -122,26 +144,31 @@ PorscheEClaimsDeeplink.launchEClaims(url: damageUrl) { success in
 - **Scope**: Optional scope-based permissions
 - **Session Tracking**: Session ID for audit trails
 
-## 📱 Universal Links vs Custom Scheme
+## � Universal Links vs Custom Scheme
 
-### Universal Links (Recommended)
+### Universal Links (Default & Recommended)
 ```swift
-// Uses: https://eclaims.porsche.com/vehicles?...
-useUniversalLink: true
+// Uses: https://eclaims.deactech.com/vehicles?...
+// This is now the default behavior
 ```
 **Benefits:**
-- Works even if app is not installed (redirects to App Store)
-- More secure and user-friendly
-- Better integration with iOS
+- ✅ Works even if app is not installed (redirects to App Store)
+- ✅ More secure and user-friendly
+- ✅ Better integration with iOS ecosystem
+- ✅ No need to declare custom schemes in Info.plist
+- ✅ Seamless user experience
 
-### Custom Scheme
+### Custom Scheme (Fallback)
 ```swift
 // Uses: porscheeclaims://vehicles?...
-useUniversalLink: false  
+useUniversalLink: false  // Explicitly disable Universal Links
 ```
-**Benefits:**
-- Direct app launch if installed
-- Simpler for testing and development
+**Use Cases:**
+- Development and testing environments
+- Legacy compatibility requirements
+- Apps that cannot support Universal Links
+
+**Note:** Universal Links are the recommended approach for production iOS apps.
 
 ## 🔧 Error Handling
 
@@ -167,7 +194,17 @@ PorscheEClaimsDeeplink.launchEClaims(url: deeplink) { success in
 
 ## 📋 Integration Checklist
 
-### Required Info.plist Entries
+### Required Associated Domains (Universal Links)
+Add to your app's entitlements file:
+```xml
+<key>com.apple.developer.associated-domains</key>
+<array>
+    <string>applinks:eclaims.deactech.com</string>
+</array>
+```
+
+### Optional Info.plist Entries (Custom Scheme Fallback)
+Only needed if using custom schemes:
 ```xml
 <key>LSApplicationQueriesSchemes</key>
 <array>
@@ -189,37 +226,49 @@ PorscheEClaimsDeeplink.launchEClaims(url: deeplink) { success in
 
 ## 🧪 Testing
 
-### Test URLs
+### Test Universal Links
 ```swift
-// Test basic vehicle deeplink
-let testUrl = "porscheeclaims://vehicles?vehicleData=eyJ2ZWhpY2xlSWQiOiJ0ZXN0MTIzIn0="
+// Test basic vehicle Universal Link
+let testUniversalUrl = "https://eclaims.deactech.com/vehicles?vehicleData=eyJ2ZWhpY2xlSWQiOiJ0ZXN0MTIzIn0="
 
-// Test universal link  
-let testUniversalUrl = "https://eclaims.porsche.com/vehicles?vehicleData=eyJ2ZWhpY2xlSWQiOiJ0ZXN0MTIzIn0="
+// Test via Safari or Notes app to verify Universal Link handling
+// Universal Links work when opened from other apps or web browsers
+```
+
+### Test Custom Scheme (if needed)
+```swift
+// Test custom scheme (fallback)
+let testSchemeUrl = "porscheeclaims://vehicles?vehicleData=eyJ2ZWhpY2xlSWQiOiJ0ZXN0MTIzIn0="
 ```
 
 ### Debug Logging
 The library includes comprehensive console logging:
-- ✅ Success indicators
-- ❌ Error messages  
-- 🔐 Security operations
-- 📱 Launch attempts
+- ✅ Success indicators for Universal Links
+- ❌ Error messages with specific failure reasons
+- 🔐 Security operations and encryption status
+- 📱 Launch attempts and Universal Link handling
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **App Not Launching**
-   - Verify E-Claims app is installed
-   - Check URL scheme configuration
-   - Validate deeplink URL format
+1. **Universal Link Not Opening App**
+   - Verify associated domains are configured correctly
+   - Check that E-Claims app supports Universal Links
+   - Test Universal Link from Safari or another app (not from the same app)
+   - Ensure the domain verification is complete
 
-2. **Authentication Failures**
+2. **App Not Launching**
+   - Universal Links automatically redirect to App Store if app not installed
+   - Verify Universal Link format matches expected pattern
+   - Check console logs for specific error messages
+
+3. **Authentication Failures**
    - Check token expiration
    - Verify user ID format
    - Ensure token structure is correct
 
-3. **Encryption Errors**
+4. **Encryption Errors**
    - Validate encryption key format (256-bit)
    - Check key derivation parameters
    - Verify data serialization

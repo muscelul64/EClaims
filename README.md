@@ -41,7 +41,7 @@ A comprehensive insurance claims mobile application for Porsche vehicles, built 
 - **Slug**: porsche-eclaims
 - **Bundle ID**: com.deactech.porscheeclaims
 - **Deeplink Scheme**: porscheeclaims://
-- **Universal Links**: https://eclaims.porsche.com/
+- **Universal Links**: https://eclaims.deactech.com/
 
 ### Project Structure
 ```
@@ -90,7 +90,7 @@ utils/                # Utility functions
    # App Configuration
    EXPO_PUBLIC_APP_ENV=development
    EXPO_PUBLIC_DEEPLINK_SCHEME=porscheeclaims
-   EXPO_PUBLIC_UNIVERSAL_LINK_DOMAIN=eclaims.porsche.com
+   EXPO_PUBLIC_UNIVERSAL_LINK_DOMAIN=eclaims.deactech.com
 
    # Security Configuration (generate your own keys)
    EXPO_PUBLIC_ENCRYPTION_KEY=your-256-bit-encryption-key

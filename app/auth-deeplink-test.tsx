@@ -293,14 +293,14 @@ export default function DeepLinkTestScreen() {
           <ThemedView style={styles.exampleItem}>
             <ThemedText style={styles.exampleLabel}>Universal Link:</ThemedText>
             <ThemedText style={styles.exampleUrl} selectable>
-              https://eclaims.porsche.com/new-statement
+              https://eclaims.deactech.com/new-statement
             </ThemedText>
           </ThemedView>
           
           <ThemedView style={styles.exampleItem}>
             <ThemedText style={styles.exampleLabel}>With Token:</ThemedText>
             <ThemedText style={styles.exampleUrl} selectable>
-              https://eclaims.porsche.com/statement/statementId/123?token=valid_eyJ1c2VySWQ...
+              https://eclaims.deactech.com/statement/statementId/123?token=valid_eyJ1c2VySWQ...
             </ThemedText>
           </ThemedView>
           

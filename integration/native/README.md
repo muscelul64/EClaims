@@ -11,8 +11,8 @@ The E-Claims app can be embedded into existing native applications as a module, 
 - **iOS Bundle ID**: `com.porsche.eclaims`
 - **Android Package**: `com.porsche.eclaims`
 - **Deeplink Scheme**: `porscheeclaims://`
-- **Universal Links**: `https://eclaims.porsche.com/`
-- **API Endpoint**: `https://api.eclaims.porsche.com`
+- **Universal Links**: `https://eclaims.deactech.com/`
+- **API Endpoint**: `https://api.eclaims.deactech.com`
 
 ## Architecture
 
@@ -197,12 +197,12 @@ Native App Events → React Native:
 
 ```kotlin
 val config = mapOf(
-    "apiBaseUrl" to "https://api.eclaims.porsche.com",
+    "apiBaseUrl" to "https://api.eclaims.deactech.com",
     "environment" to if (BuildConfig.DEBUG) "development" else "production",
     "analyticsEnabled" to true,
     "masterAppScheme" to "porsche-master-app", // Production master app
     "appScheme" to "porscheeclaims",
-    "universalLinkHost" to "eclaims.porsche.com",
+    "universalLinkHost" to "eclaims.deactech.com",
     "theme" to mapOf(
         "primaryColor" to "#007AFF",
         "darkMode" to isSystemInDarkMode()
@@ -219,12 +219,12 @@ val config = mapOf(
 
 ```swift
 let config: [String: Any] = [
-    "apiBaseUrl": "https://api.eclaims.porsche.com",
+    "apiBaseUrl": "https://api.eclaims.deactech.com",
     "environment": Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") == "Debug" ? "development" : "production",
     "analyticsEnabled": true,
     "masterAppScheme": "porsche-master-app", // Production master app
     "appScheme": "porscheeclaims",
-    "universalLinkHost": "eclaims.porsche.com",
+    "universalLinkHost": "eclaims.deactech.com",
     "theme": [
         "primaryColor": "#007AFF",
         "darkMode": traitCollection.userInterfaceStyle == .dark
@@ -263,7 +263,7 @@ let config: [String: Any] = [
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="eclaims.porsche.com" />
+    <data android:scheme="https" android:host="eclaims.deactech.com" />
 </intent-filter>
 
 <provider
@@ -303,7 +303,7 @@ let config: [String: Any] = [
 <!-- Associated Domains for Universal Links -->
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:eclaims.porsche.com</string>
+    <string>applinks:eclaims.deactech.com</string>
 </array>
 ```
 

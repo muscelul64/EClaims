@@ -128,7 +128,7 @@ export default function DeepLinkTestScreen() {
           <ThemedView style={styles.exampleItem}>
             <ThemedText style={styles.exampleLabel}>Universal Link:</ThemedText>
             <ThemedText style={styles.exampleUrl} selectable>
-              https://eclaims.porsche.com/new-statement
+              https://eclaims.deactech.com/new-statement
             </ThemedText>
           </ThemedView>
           

@@ -7,8 +7,8 @@
  * Production Configuration:
  * - Package: com.porsche.eclaims
  * - Deeplink Scheme: porscheeclaims://
- * - Universal Links: https://eclaims.porsche.com/
- * - API Endpoint: https://api.eclaims.porsche.com
+ * - Universal Links: https://eclaims.deactech.com/
+ * - API Endpoint: https://api.eclaims.deactech.com
  */
 
 package com.yourcompany.yourapp.eclaims
@@ -94,12 +94,12 @@ class MainActivity : AppCompatActivity(), EClaimsHostListener {
     
     private fun initializeEClaims() {
         val config = mapOf(
-            "apiBaseUrl" to "https://api.eclaims.porsche.com",
+            "apiBaseUrl" to "https://api.eclaims.deactech.com",
             "environment" to if (BuildConfig.DEBUG) "development" else "production",
             "analyticsEnabled" to true,
             "masterAppScheme" to "porsche-master-app",
             "appScheme" to "porscheeclaims",
-            "universalLinkHost" to "eclaims.porsche.com",
+            "universalLinkHost" to "eclaims.deactech.com",
             "enableLogging" to BuildConfig.DEBUG,
             "theme" to mapOf(
                 "primaryColor" to "#007AFF",

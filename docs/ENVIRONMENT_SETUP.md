@@ -36,9 +36,9 @@ This document explains how to set up and use environment variables in the Porsch
 
 | Variable | Description | Environment | Default |
 |----------|-------------|-------------|---------|
-| `EXPO_PUBLIC_API_BASE_URL_DEV` | Development API URL | Development | `https://api-dev.eclaims.porsche.com` |
-| `EXPO_PUBLIC_API_BASE_URL_STAGING` | Staging API URL | Staging | `https://api-staging.eclaims.porsche.com` |
-| `EXPO_PUBLIC_API_BASE_URL_PROD` | Production API URL | Production | `https://api.eclaims.porsche.com` |
+| `EXPO_PUBLIC_API_BASE_URL_DEV` | Development API URL | Development | `https://api-dev.eclaims.deactech.com` |
+| `EXPO_PUBLIC_API_BASE_URL_STAGING` | Staging API URL | Staging | `https://api-staging.eclaims.deactech.com` |
+| `EXPO_PUBLIC_API_BASE_URL_PROD` | Production API URL | Production | `https://api.eclaims.deactech.com` |
 | `EXPO_PUBLIC_API_TIMEOUT` | API request timeout (ms) | All | `30000` |
 
 ### Deeplink Configuration

@@ -5,51 +5,111 @@ This directory contains platform-specific code for integrating with the Porsche 
 ## Files
 
 ### iOS Integration
-- **`SecureCommunication.swift`** - Swift 5 implementation for iOS master app
+- **`PorscheEClaimsDeeplink.swift`** - Swift 5 implementation for iOS master app with Universal Links support
+- **`README.md`** - Detailed iOS integration documentation
 
 ### Android Integration  
-- **`SecureCommunication.kt`** - Kotlin implementation for Android master app
+- **`SecureCommunication.kt`** - Kotlin implementation for Android master app with App Links support
+
+## ⚙️ Environment Configuration
+
+**IMPORTANT**: Both iOS and Android implementations support environment-specific configuration:
+
+### Supported Environments:
+- **Production**: `eclaims.deactech.com` / `porscheeclaims://`
+- **Staging**: `staging-eclaims.deactech.com` / `porscheeclaims-staging://` 
+- **Development**: `dev-eclaims.deactech.com` / `porscheeclaims-dev://`
+
+### iOS Configuration
+Update `UNIVERSAL_LINK_BASE` in `PorscheEClaimsDeeplink.swift`:
+```swift
+private static let UNIVERSAL_LINK_BASE = "https://eclaims.deactech.com"  // Production
+// private static let UNIVERSAL_LINK_BASE = "https://staging-eclaims.deactech.com"  // Staging  
+// private static let UNIVERSAL_LINK_BASE = "https://dev-eclaims.deactech.com"  // Development
+```
+
+### Android Configuration  
+Use the Environment enum in `SecureCommunication.kt`:
+```kotlin
+// Production (default)
+val secureCom = SecureCommunication(environment = SecureCommunication.Environment.PRODUCTION)
+
+// Staging
+val secureCom = SecureCommunication(environment = SecureCommunication.Environment.STAGING)
+
+// Development  
+val secureCom = SecureCommunication(environment = SecureCommunication.Environment.DEVELOPMENT)
+```
 
 ## Features
 
 Both implementations provide:
+- **Universal Links/App Links** - Preferred integration method for better UX
+- **Custom Scheme Fallback** - Backward compatibility support
 - AES-256-CBC encryption for vehicle data
 - PBKDF2 key derivation for enhanced security
 - HMAC-SHA256 signatures for data integrity
 - Secure authentication token creation
-- Deeplink URL generation with encrypted payloads
+- Environment-aware URL generation
 
 ## Quick Start
 
-### iOS (Swift 5)
+### iOS (Swift 5) - Universal Links (Recommended)
 ```swift
-let secureCom = SecureCommunication()
-
-let deeplinkURL = try secureCom.createPorscheVehicleDeeplink(
-    model: "911 Carrera",
-    year: 2024,
-    vin: "WP0CA2A89KS123456",
-    userId: "user123"
+// Create vehicle data
+let vehicleData = PorscheEClaimsDeeplink.VehicleData(
+    vehicleId: "vehicle123",
+    vin: "WP0ZZZ99ZTS392124",
+    make: "Porsche",
+    model: "911 Carrera"
 )
 
-UIApplication.shared.open(deeplinkURL)
+// Generate Universal Link (default behavior)
+if let universalUrl = PorscheEClaimsDeeplink.generateVehicleDeeplink(
+    vehicleData: vehicleData,
+    useUniversalLink: true  // Default: true
+) {
+    PorscheEClaimsDeeplink.launchEClaims(url: universalUrl) { success in
+        print("Launch success: \\(success)")
+    }
+}
 ```
 
-### Android (Kotlin)
+### Android (Kotlin) - App Links (Recommended)
 ```kotlin
-val secureCom = SecureCommunication()
+// Configure for your environment
+val secureCom = SecureCommunication(
+    environment = SecureCommunication.Environment.PRODUCTION
+)
 
-val deeplinkUrl = SecureCommunicationExtensions.run {
+// Generate Universal Link (App Link)
+val universalUrl = SecureCommunicationExtensions.run {
     secureCom.createPorscheVehicleDeeplink(
         model = "911 Carrera",
         year = 2024,
-        vin = "WP0CA2A89KS123456",
-        userId = "user123"
+        vin = "WP0ZZZ99ZTS392124",
+        userId = "user123",
+        useUniversalLink = true  // Default: true
     )
 }
 
-val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
+// Launch with App Link
+val intent = Intent(Intent.ACTION_VIEW, Uri.parse(universalUrl))
 startActivity(intent)
+```
+
+### Legacy Custom Scheme Support
+```kotlin
+// Android - Custom Scheme Fallback
+val customSchemeUrl = SecureCommunicationExtensions.run {
+    secureCom.createPorscheVehicleDeeplink(
+        model = "911 Carrera",
+        year = 2024, 
+        vin = "WP0ZZZ99ZTS392124",
+        userId = "user123",
+        useUniversalLink = false  // Force custom scheme
+    )
+}
 ```
 
 ## Security Configuration

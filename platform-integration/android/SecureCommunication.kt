@@ -34,8 +34,18 @@ fun JSONObject.toMap(): Map<String, Any> {
  * Matches the encryption implementation in Porsche E-Claims React Native app
  */
 class SecureCommunication @JvmOverloads constructor(
-    private val sharedSecret: String = "P0rsch3-ECl41ms-S3cur3-K3y-D3v3l0pm3nt-2026!@#"
+    private val sharedSecret: String = "P0rsch3-ECl41ms-S3cur3-K3y-D3v3l0pm3nt-2026!@#",
+    private val environment: Environment = Environment.PRODUCTION
 ) {
+    
+    /**
+     * Environment configuration for URL generation
+     */
+    enum class Environment(val appScheme: String, val universalLinkHost: String, val packageName: String) {
+        DEVELOPMENT("porscheeclaims-dev", "dev-eclaims.deactech.com", "com.deactech.porscheeclaims.dev"),
+        STAGING("porscheeclaims-staging", "staging-eclaims.deactech.com", "com.deactech.porscheeclaims.staging"),
+        PRODUCTION("porscheeclaims", "eclaims.deactech.com", "com.deactech.porscheeclaims")
+    }
     
     companion object {
         private const val AES_TRANSFORMATION = "AES/CBC/PKCS5Padding"
@@ -80,7 +90,7 @@ class SecureCommunication @JvmOverloads constructor(
     fun generateSecureDeeplink(vehicleData: Map<String, Any>, authToken: String? = null): String {
         val encryptedVehicleData = encryptVehicleData(vehicleData)
         
-        val urlBuilder = StringBuilder("porscheeclaims://vehicles?vehicleData=")
+        val urlBuilder = StringBuilder("${environment.appScheme}://vehicles?secureData=")
         urlBuilder.append(android.net.Uri.encode(encryptedVehicleData))
         
         authToken?.let {
@@ -99,12 +109,47 @@ class SecureCommunication @JvmOverloads constructor(
             Base64.NO_WRAP
         )
         
-        val urlBuilder = StringBuilder("porscheeclaims://vehicles?vehicleData=")
+        val urlBuilder = StringBuilder("${environment.appScheme}://vehicles?vehicleData=")
         urlBuilder.append(android.net.Uri.encode(legacyVehicleData))
         
         authToken?.let {
             urlBuilder.append("&token=").append(android.net.Uri.encode(it))
         }
+        
+        return urlBuilder.toString()
+    }
+    
+    /**
+     * Generate Universal Link URL (Android App Links - preferred method)
+     */
+    fun generateUniversalLink(vehicleData: Map<String, Any>, authToken: String? = null, encrypt: Boolean = false): String {
+        val vehicleDataParam = if (encrypt) {
+            val encryptedVehicleData = encryptVehicleData(vehicleData)
+            "secureData=${android.net.Uri.encode(encryptedVehicleData)}"
+        } else {
+            val legacyVehicleData = Base64.encodeToString(
+                JSONObject(vehicleData).toString().toByteArray(StandardCharsets.UTF_8), 
+                Base64.NO_WRAP
+            )
+            "vehicleData=${android.net.Uri.encode(legacyVehicleData)}"
+        }
+        
+        val urlBuilder = StringBuilder("https://${environment.universalLinkHost}/vehicles?${vehicleDataParam}")
+        
+        authToken?.let {
+            urlBuilder.append("&token=").append(android.net.Uri.encode(it))
+        }
+        
+        return urlBuilder.toString()
+    }
+    
+    /**
+     * Generate damage assessment Universal Link
+     */
+    fun generateDamageUniversalLink(vehicleId: String, authToken: String): String {
+        val urlBuilder = StringBuilder("https://${environment.universalLinkHost}/damage?vehicleId=")
+        urlBuilder.append(android.net.Uri.encode(vehicleId))
+        urlBuilder.append("&token=").append(android.net.Uri.encode(authToken))
         
         return urlBuilder.toString()
     }
@@ -280,10 +325,12 @@ object SecureCommunicationExtensions {
         insuranceCompany: String? = null,
         policyNumber: String? = null,
         userId: String? = null,
-        useEncryption: Boolean = true
+        useEncryption: Boolean = true,
+        useUniversalLink: Boolean = true
     ): String {
         
         val vehicleData = mutableMapOf<String, Any>(
+            "vehicleId" to vin, // Use VIN as vehicle ID
             "make" to make,
             "model" to model,
             "year" to year,
@@ -299,10 +346,11 @@ object SecureCommunicationExtensions {
             if (useEncryption) createSecureAuthToken(it) else createLegacyAuthToken(it)
         }
         
-        return if (useEncryption) {
-            generateSecureDeeplink(vehicleData, authToken)
-        } else {
-            generateLegacyDeeplink(vehicleData, authToken)
+        return when {
+            useUniversalLink -> generateUniversalLink(vehicleData, authToken, useEncryption)
+            useEncryption -> generateSecureDeeplink(vehicleData, authToken)
+            else -> generateLegacyDeeplink(vehicleData, authToken)
+        }
         }
     }
     
@@ -322,8 +370,25 @@ object SecureCommunicationExtensions {
     ): String {
         return createPorscheVehicleDeeplink(
             make, model, year, vin, licensePlate, color, 
-            insuranceCompany, policyNumber, userId, useEncryption = false
+            insuranceCompany, policyNumber, userId, 
+            useEncryption = false, useUniversalLink = false
         )
+    }
+    
+    /**
+     * Create damage assessment Universal Link
+     */
+    fun SecureCommunication.createDamageAssessmentLink(
+        vehicleId: String,
+        userId: String,
+        useUniversalLink: Boolean = true
+    ): String {
+        val authToken = createSecureAuthToken(userId)
+        return if (useUniversalLink) {
+            generateDamageUniversalLink(vehicleId, authToken)
+        } else {
+            "${if (environment == Environment.PRODUCTION) "porscheeclaims" else environment.appScheme}://damage?vehicleId=${android.net.Uri.encode(vehicleId)}&token=${android.net.Uri.encode(authToken)}"
+        }
     }
     
     /**
@@ -465,7 +530,7 @@ class MainActivity : AppCompatActivity() {
             }
             
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
-            intent.setPackage("com.deactech.porscheeclaims") // Specific package
+            intent.setPackage(environment.packageName) // Environment-specific package
             
             if (intent.resolveActivity(packageManager) != null) {
                 startActivity(intent)
@@ -487,7 +552,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Install") { _, _ ->
                 // Open Play Store
                 val playStoreIntent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("market://details?id=com.deactech.porscheeclaims")
+                    data = Uri.parse("market://details?id=${environment.packageName}")
                 }
                 startActivity(playStoreIntent)
             }

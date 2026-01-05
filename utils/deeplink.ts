@@ -5,7 +5,7 @@ import { ENV_CONFIG } from './environment';
 
 // Deeplink URL structure:
 // porscheeclaims://action/param1/param2?token=auth_token
-// https://eclaims.porsche.com/action/param1/param2?token=auth_token
+// https://eclaims.deactech.com/action/param1/param2?token=auth_token
 
 export interface AuthToken {
   token: string;
@@ -162,20 +162,35 @@ export class DeepLinkManager {
   // Parse the incoming URL
   private async parseURL(url: string): Promise<ParsedURL | null> {
     try {
+      console.log('🔍 Parsing incoming URL:', url);
+      
       // Handle both custom scheme and universal links
       let cleanURL = url;
+      let sourceType = 'unknown';
       
-      if (url.startsWith('https://eclaims.porsche.com/')) {
-        cleanURL = url.replace('https://eclaims.porsche.com/', 'porscheeclaims://');
-      }
+      // Get environment-specific universal link host
+      const universalLinkHost = ENV_CONFIG.UNIVERSAL_LINK_HOST;
+      const universalLinkPrefix = `https://${universalLinkHost}/`;
       
-      if (url.startsWith('porscheeclaims://')) {
-        cleanURL = url.replace('porscheeclaims://', '');
+      if (url.startsWith(universalLinkPrefix)) {
+        cleanURL = url.replace(universalLinkPrefix, `${ENV_CONFIG.APP_SCHEME}://`);
+        sourceType = 'Universal Link';
+        console.log('✅ Detected Universal Link, converted to:', cleanURL);
+      } else if (url.startsWith(`${ENV_CONFIG.APP_SCHEME}://`)) {
+        cleanURL = url.replace(`${ENV_CONFIG.APP_SCHEME}://`, '');
+        sourceType = 'Custom Scheme';
+        console.log('✅ Detected Custom Scheme, cleaned to:', cleanURL);
+      } else {
+        console.warn('⚠️ Unknown URL scheme:', url);
+        console.log('Expected Universal Link prefix:', universalLinkPrefix);
+        console.log('Expected Custom Scheme prefix:', `${ENV_CONFIG.APP_SCHEME}://`);
       }
 
       // Split URL and query parameters
       const [pathPart, queryPart] = cleanURL.split('?');
       const parts = pathPart.split('/').filter(part => part.length > 0);
+      
+      console.log('URL components:', { sourceType, pathPart, queryPart: queryPart?.substring(0, 100) + '...' });
       
       if (parts.length === 0) {
         const authToken = await this.parseAuthToken(queryPart);
@@ -194,12 +209,18 @@ export class DeepLinkManager {
         const tokenString = queryParams.get('token');
         if (tokenString) {
           authToken = await this.parseAuthToken(tokenString);
+          console.log('📝 Auth token extracted:', authToken?.userId ? 'Valid' : 'Invalid');
         }
         
-        // Extract other query parameters
+        // Extract other query parameters (including vehicleData and secureData)
         for (const [key, value] of queryParams.entries()) {
           if (key !== 'token') {
             params[key] = decodeURIComponent(value);
+            if (key === 'vehicleData' || key === 'secureData') {
+              console.log(`📦 Found ${key} parameter (length: ${value.length})`);
+            } else {
+              console.log(`📝 Parameter ${key}:`, value.substring(0, 50));
+            }
           }
         }
       }
@@ -367,20 +388,30 @@ export class DeepLinkManager {
     this.registerHandler('vehicles', {
       pattern: 'porscheeclaims://vehicles',
       handler: async (params, authToken) => {
-        // Handle vehicle data from deeplink - SMART VERSION
-        if (params.vehicleData) {
+        // Handle vehicle data from deeplink - SMART VERSION  
+        // Support both vehicleData (legacy base64) and secureData (encrypted) parameters
+        const vehicleDataParam = params.vehicleData || params.secureData;
+        if (vehicleDataParam) {
           try {
             // Import secure communication utility
             const { secureCommunication } = await import('./secure-communication');
             
-            // Use smart extraction to automatically detect format
-            const decodedVehicleData = secureCommunication.smartExtractVehicleData(params.vehicleData);
+            // Use smart extraction to automatically detect format (encrypted vs legacy)
+            const decodedVehicleData = secureCommunication.smartExtractVehicleData(vehicleDataParam);
             
             if (!decodedVehicleData) {
               console.error('Failed to decode vehicle data in any format');
+              console.log('Attempted to parse vehicle data parameter:', vehicleDataParam?.substring(0, 50) + '...');
               Alert.alert('Error', 'Unable to process vehicle data from deeplink');
               return;
             }
+            
+            console.log('✅ Successfully decoded vehicle data from Universal Link/deeplink');
+            console.log('Vehicle details:', { 
+              make: decodedVehicleData.make, 
+              model: decodedVehicleData.model, 
+              vin: decodedVehicleData.vin?.substring(0, 8) + '...'
+            });
             
             // Import the vehicles store
             const { useVehiclesStore } = await import('@/stores/use-vehicles-store');

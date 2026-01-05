@@ -98,7 +98,7 @@ func handleDeeplink(url: URL) {
 **Deeplink Examples:**
 - Basic vehicle access: `porscheeclaims://vehicles`
 - Single vehicle with auth: `porscheeclaims://vehicles/vehicle123?token=xxx`
-- Universal link: `https://eclaims.porsche.com/vehicles/vehicle123?token=xxx`
+- Universal link: `https://eclaims.deactech.com/vehicles/vehicle123?token=xxx`
 
 **Environment Detection:**
 - Automatic environment detection based on build configuration
@@ -122,7 +122,7 @@ func handleDeeplink(url: URL) {
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="eclaims.porsche.com" />
+    <data android:scheme="https" android:host="eclaims.deactech.com" />
 </intent-filter>
 ```
 
@@ -144,7 +144,7 @@ func handleDeeplink(url: URL) {
 <!-- Universal Links -->
 <key>com.apple.developer.associated-domains</key>
 <array>
-    <string>applinks:eclaims.porsche.com</string>
+    <string>applinks:eclaims.deactech.com</string>
 </array>
 ```
 

@@ -178,12 +178,12 @@ porscheeclaims://statement/statementId/123/mode/view?token=valid_eyJhbGciOiJIUzI
 
 ### Universal Link with Token
 ```
-https://eclaims.porsche.com/vehicle/vehicleId/456/action/edit?token=valid_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+https://eclaims.deactech.com/vehicle/vehicleId/456/action/edit?token=valid_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ### Login Invitation Link
 ```
-https://eclaims.porsche.com/login/userId/newuser@example.com/invitedBy/admin?token=valid_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+https://eclaims.deactech.com/login/userId/newuser@example.com/invitedBy/admin?token=valid_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 ## Permission Scopes
