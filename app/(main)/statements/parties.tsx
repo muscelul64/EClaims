@@ -1,11 +1,12 @@
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from 'react-i18next';
 
 interface Party {
@@ -64,6 +65,14 @@ export default function StatementPartiesScreen() {
   const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1c1c1c' }, 'background');
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
   const selectedBorderColor = useThemeColor({}, 'tint');
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+  const linkColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+  const summaryBackgroundColor = useCustomThemeColor({ 
+    light: 'rgba(76, 175, 80, 0.1)', 
+    dark: 'rgba(102, 187, 106, 0.1)' 
+  });
 
   const handlePartyToggle = (partyType: string) => {
     setSelectedParties(prev => {
@@ -186,7 +195,7 @@ export default function StatementPartiesScreen() {
                   {t(partyType.description)}
                 </ThemedText>
                 {hasDetails && (
-                  <ThemedText style={styles.partyDetailsText}>
+                  <ThemedText style={[styles.partyDetailsText, { color: linkColor }]}>
                     {partyDetails[partyType.id]?.name}
                   </ThemedText>
                 )}
@@ -194,7 +203,7 @@ export default function StatementPartiesScreen() {
             </View>
 
             {isSelected && (
-              <View style={styles.selectedIndicator}>
+              <View style={[styles.selectedIndicator, { backgroundColor: primaryButtonColor }]}>
                 <ThemedText style={styles.selectedIcon}>✓</ThemedText>
               </View>
             )}
@@ -206,7 +215,7 @@ export default function StatementPartiesScreen() {
             title={hasDetails ? t('statementParties.editDetails') : t('statementParties.addDetails')}
             onPress={() => handlePartyDetails(partyType.id)}
             variant="outline"
-            style={styles.detailsButton}
+            style={[styles.detailsButton, { borderColor: linkColor }]}
           />
         )}
       </View>
@@ -245,8 +254,11 @@ export default function StatementPartiesScreen() {
 
           {/* Summary */}
           {selectedParties.length > 0 && (
-            <View style={styles.summary}>
-              <ThemedText style={styles.summaryTitle}>
+            <View style={[styles.summary, { 
+              backgroundColor: summaryBackgroundColor,
+              borderColor: primaryButtonColor 
+            }]}>
+              <ThemedText style={[styles.summaryTitle, { color: primaryButtonColor }]}>
                 {t('statementParties.selectedParties')} ({selectedParties.length})
               </ThemedText>
               {selectedParties.map(partyType => {
@@ -274,7 +286,7 @@ export default function StatementPartiesScreen() {
           title={t('common.continue')}
           onPress={handleContinue}
           variant="primary"
-          style={styles.continueButton}
+          style={[styles.continueButton, { backgroundColor: primaryButtonColor }]}
           disabled={selectedParties.length === 0}
         />
       </View>
@@ -296,12 +308,11 @@ export default function StatementPartiesScreen() {
               {t('statementParties.enterName')}
             </ThemedText>
             
-            <TextInput
-              style={[styles.modalInput, { borderColor, color: useThemeColor({}, 'text') }]}
+            <ThemedTextInput
+              style={[styles.modalInput, { borderColor }]}
               value={tempName}
               onChangeText={setTempName}
               placeholder={t('statementParties.enterName') as string}
-              placeholderTextColor="#999"
               autoFocus={true}
               onSubmitEditing={handleSaveName}
               returnKeyType="done"
@@ -413,7 +424,6 @@ const styles = StyleSheet.create({
   partyDetailsText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#2196F3',
     marginTop: 8,
   },
   selectedIndicator: {
@@ -423,7 +433,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -434,21 +443,17 @@ const styles = StyleSheet.create({
   },
   detailsButton: {
     marginTop: 10,
-    borderColor: '#2196F3',
   },
   summary: {
     marginTop: 30,
     padding: 20,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#4CAF50',
   },
   summaryTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 15,
-    color: '#4CAF50',
   },
   summaryItem: {
     flexDirection: 'row',
@@ -468,7 +473,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   continueButton: {
-    backgroundColor: '#4CAF50',
   },
   modalOverlay: {
     flex: 1,

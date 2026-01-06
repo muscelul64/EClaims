@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 //import { useUserStore } from '@/stores/use-user-store';
 import { useTranslation } from 'react-i18next';
 
@@ -27,6 +27,10 @@ export default function StatementTimeScreen() {
   
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+  const warningColor = useCustomThemeColor({ light: '#FF9800', dark: '#FFB74D' });
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -166,7 +170,7 @@ export default function StatementTimeScreen() {
 
           {/* Important Notes */}
           <View style={styles.notesContainer}>
-            <ThemedText style={styles.notesTitle}>
+            <ThemedText style={[styles.notesTitle, { color: warningColor }]}>
               {t('statementTime.importantNotes')}
             </ThemedText>
             <ThemedText style={styles.notesText}>
@@ -188,7 +192,7 @@ export default function StatementTimeScreen() {
           title={t('common.continue')}
           onPress={handleContinue}
           variant="primary"
-          style={styles.continueButton}
+          style={[styles.continueButton, { backgroundColor: primaryButtonColor }]}
         />
       </View>
 
@@ -307,7 +311,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
-    color: '#FF9800',
   },
   notesText: {
     fontSize: 13,
@@ -320,6 +323,5 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   continueButton: {
-    backgroundColor: '#2196F3',
   },
 });

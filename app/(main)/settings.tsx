@@ -29,6 +29,12 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   
+  // Theme-aware Switch colors
+  const switchTrackColorFalse = useCustomThemeColor({ light: '#767577', dark: '#555' });
+  const switchTrackColorTrue = useCustomThemeColor({ light: '#4CAF50', dark: '#4CAF50' });
+  const switchThumbColorInactive = useCustomThemeColor({ light: '#f4f3f4', dark: '#cccccc' });
+  const switchThumbColorActive = useCustomThemeColor({ light: '#ffffff', dark: '#ffffff' });
+  
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useCustomThemeColor({ light: '#ffffff', dark: '#1c1c1c' });
   const borderColor = useCustomThemeColor({ light: '#e1e1e1', dark: '#333' });
@@ -316,8 +322,11 @@ export default function SettingsScreen() {
             <Switch
               value={item.value}
               onValueChange={item.onToggle}
-              trackColor={{ false: '#767577', true: '#4CAF50' }}
-              thumbColor={item.value ? '#ffffff' : '#f4f3f4'}
+              trackColor={{
+                false: switchTrackColorFalse,
+                true: switchTrackColorTrue
+              }}
+              thumbColor={item.value ? switchThumbColorActive : switchThumbColorInactive}
             />
           )}
           

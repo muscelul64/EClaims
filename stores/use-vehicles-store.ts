@@ -106,7 +106,7 @@ export const useVehiclesStore = create<VehiclesState>((set, get) => ({
   getFilteredVehicles: () => {
     const { vehicles } = get();
     const userState = useUserStore.getState();
-    const deeplinkContext = userState.user.deeplinkContext;
+    const deeplinkContext = userState.user.universalLinkContext;
     
     // If there's a vehicle restriction from deeplink
     if (deeplinkContext?.hasVehicleRestriction) {

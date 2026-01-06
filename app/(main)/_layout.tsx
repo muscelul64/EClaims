@@ -8,7 +8,7 @@ export default function MainLayout() {
   const { user } = useUserStore();
 
   // If user came via deeplink with auth token, allow access even without traditional login
-  const hasDeeplinkAuth = user.deeplinkContext && user.authToken;
+  const hasDeeplinkAuth = user.universalLinkContext && user.authToken;
   
   if (!isAuthenticated && !hasDeeplinkAuth) {
     return <Redirect href="/(auth)/login" />;

@@ -1,9 +1,10 @@
 import { Picker } from '@react-native-picker/picker';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Vehicle, useVehiclesStore } from '@/stores/use-vehicles-store';
@@ -102,7 +103,7 @@ export function VehicleForm({ vehicle, onSuccess, onCancel }: VehicleFormProps) 
           <ThemedTextInput
             style={styles.input}
             value={formData.make}
-            onChangeText={(text) => updateField('make', text)}
+            onChangeText={(text: string) => updateField('make', text)}
             placeholder="e.g., Porsche, BMW, Mercedes"
             autoCapitalize="words"
           />
@@ -113,7 +114,7 @@ export function VehicleForm({ vehicle, onSuccess, onCancel }: VehicleFormProps) 
           <ThemedTextInput
             style={styles.input}
             value={formData.model}
-            onChangeText={(text) => updateField('model', text)}
+            onChangeText={(text: string) => updateField('model', text)}
             placeholder="e.g., 911, Cayenne, Macan"
             autoCapitalize="words"
           />

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import type { Vehicle } from '@/stores/use-vehicles-store';
 import { useVehiclesStore } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,14 @@ export default function VehicleSelectionScreen() {
   const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1c1c1c' }, 'background');
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
   const selectedBorderColor = useThemeColor({}, 'tint');
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+  const linkColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+  const licensePlateBackgroundColor = useCustomThemeColor({ 
+    light: 'rgba(33, 150, 243, 0.1)', 
+    dark: 'rgba(100, 181, 246, 0.1)' 
+  });
 
   useEffect(() => {
     loadVehicles();
@@ -86,8 +94,11 @@ export default function VehicleSelectionScreen() {
           </View>
           
           {vehicle.licensePlate && (
-            <View style={styles.licensePlateContainer}>
-              <ThemedText style={styles.licensePlateText}>
+            <View style={[styles.licensePlateContainer, { 
+              backgroundColor: licensePlateBackgroundColor, 
+              borderColor: linkColor 
+            }]}>
+              <ThemedText style={[styles.licensePlateText, { color: linkColor }]}>
                 {vehicle.licensePlate}
               </ThemedText>
             </View>
@@ -103,7 +114,7 @@ export default function VehicleSelectionScreen() {
         </View>
 
         {isSelected && (
-          <View style={styles.selectedIndicator}>
+          <View style={[styles.selectedIndicator, { backgroundColor: primaryButtonColor }]}>
             <ThemedText style={styles.selectedIcon}>✓</ThemedText>
           </View>
         )}
@@ -124,7 +135,7 @@ export default function VehicleSelectionScreen() {
         title={t('vehicles.addVehicle')}
         onPress={handleAddVehicle}
         variant="primary"
-        style={styles.addFirstVehicleButton}
+        style={[styles.addFirstVehicleButton, { backgroundColor: primaryButtonColor }]}
       />
     </View>
   );
@@ -174,7 +185,7 @@ export default function VehicleSelectionScreen() {
                 title={t('statementVehicle.addAnotherVehicle')}
                 onPress={handleAddVehicle}
                 variant="outline"
-                style={styles.addVehicleButton}
+                style={[styles.addVehicleButton, { borderColor: linkColor }]}
               />
             </View>
           </>
@@ -188,7 +199,7 @@ export default function VehicleSelectionScreen() {
             title={t('common.continue')}
             onPress={handleContinue}
             variant="primary"
-            style={styles.continueButton}
+            style={[styles.continueButton, { backgroundColor: primaryButtonColor }]}
             disabled={!selectedVehicle}
           />
         </View>
@@ -268,17 +279,14 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   licensePlateContainer: {
-    backgroundColor: 'rgba(33, 150, 243, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2196F3',
   },
   licensePlateText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2196F3',
   },
   vehicleDetails: {
     gap: 4,
@@ -294,7 +302,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -313,7 +320,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0, 0, 0, 0.1)',
   },
   addVehicleButton: {
-    borderColor: '#2196F3',
   },
   emptyState: {
     flex: 1,
@@ -339,7 +345,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   addFirstVehicleButton: {
-    backgroundColor: '#4CAF50',
     minWidth: 200,
   },
   footer: {
@@ -347,6 +352,5 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   continueButton: {
-    backgroundColor: '#4CAF50',
   },
 });

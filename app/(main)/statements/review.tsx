@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { ClaimStatement, useStatementsStore } from '@/stores/use-statements-store';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,15 @@ export default function StatementReviewScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#1c1c1c' }, 'background');
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+  const linkColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+  const warningColor = useCustomThemeColor({ light: '#FF9800', dark: '#FFB74D' });
+  const warningBackgroundColor = useCustomThemeColor({ 
+    light: 'rgba(255, 152, 0, 0.05)', 
+    dark: 'rgba(255, 183, 77, 0.05)' 
+  });
 
   // Mapping from circumstance IDs to translation keys
   const circumstanceTranslationMap: Record<string, string> = {
@@ -164,7 +173,9 @@ export default function StatementReviewScreen() {
           color: vehicleData.color || '',
           fuelType: vehicleData.fuelType || 'gasoline',
           insuranceCompany: vehicleData.insuranceCompany || '',
-          policyNumber: vehicleData.policyNumber || ''
+          policyNumber: vehicleData.policyNumber || '',
+          createdAt: Date.now(),
+          updatedAt: Date.now()
         },
         damages: [],
         photos: [], // Will be added from camera store if needed
@@ -212,7 +223,7 @@ export default function StatementReviewScreen() {
     <View style={[styles.section, { backgroundColor: cardBackgroundColor, borderColor }]}>
       <View style={styles.sectionHeader}>
         <ThemedText style={styles.sectionTitle}>{title}</ThemedText>
-        <TouchableOpacity onPress={onEdit} style={styles.editButton}>
+        <TouchableOpacity onPress={onEdit} style={[styles.editButton, { backgroundColor: linkColor }]}>
           <ThemedText style={styles.editButtonText}>
             {t('common.edit')}
           </ThemedText>
@@ -371,8 +382,11 @@ export default function StatementReviewScreen() {
           )}
 
           {/* Submission Info */}
-          <View style={[styles.submissionInfo, { borderColor }]}>
-            <ThemedText style={styles.submissionTitle}>
+          <View style={[styles.submissionInfo, { 
+            borderColor: warningColor,
+            backgroundColor: warningBackgroundColor 
+          }]}>
+            <ThemedText style={[styles.submissionTitle, { color: warningColor }]}>
               {t('statementReview.beforeSubmitting')}
             </ThemedText>
             <ThemedText style={styles.submissionText}>
@@ -406,14 +420,14 @@ export default function StatementReviewScreen() {
               );
             }}
             variant="outline"
-            style={styles.draftButton}
+            style={[styles.draftButton, { borderColor: warningColor }]}
           />
           
           <ThemedButton
             title={isSubmitting ? t('statementReview.submitting') : t('statementReview.submitStatement')}
             onPress={handleSubmit}
             variant="primary"
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: primaryButtonColor }]}
             disabled={isSubmitting}
           />
         </View>
@@ -486,7 +500,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#2196F3',
   },
   editButtonText: {
     fontSize: 14,
@@ -525,14 +538,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginTop: 20,
-    backgroundColor: 'rgba(255, 152, 0, 0.05)',
-    borderColor: '#FF9800',
   },
   submissionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#FF9800',
   },
   submissionText: {
     fontSize: 14,
@@ -549,10 +559,8 @@ const styles = StyleSheet.create({
   },
   draftButton: {
     flex: 1,
-    borderColor: '#FF9800',
   },
   submitButton: {
     flex: 2,
-    backgroundColor: '#4CAF50',
   },
 });

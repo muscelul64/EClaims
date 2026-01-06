@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { useVehiclesStore } from '@/stores/use-vehicles-store';
@@ -148,12 +149,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.make')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+            <ThemedTextInput
                 style={styles.inputText}
                 value={formData.make}
                 onChangeText={(text) => updateFormData('make', text)}
                 placeholder={t('vehicleForm.makePlaceholder') || 'Enter make'}
-                placeholderTextColor="#999"
                 autoCapitalize="words"
               />
             </ThemedView>
@@ -163,12 +163,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.model')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.model}
                 onChangeText={(text) => updateFormData('model', text)}
-                placeholder={t('vehicleForm.modelPlaceholder') || ''}
-                placeholderTextColor="#999"
+                placeholder={t('vehicleForm.modelPlaceholder') || 'Enter model'}
                 autoCapitalize="words"
               />
             </ThemedView>
@@ -178,12 +177,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.licensePlate')} *</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.licensePlate}
                 onChangeText={(text) => updateFormData('licensePlate', text)}
                 placeholder={t('vehicleForm.licensePlatePlaceholder') || ''}
-                placeholderTextColor="#999"
                 autoCapitalize="characters"
               />
             </ThemedView>
@@ -193,7 +191,7 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.year')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.year.toString()}
                 onChangeText={(text) => {
@@ -203,7 +201,6 @@ export default function AddVehicleScreen() {
                   }
                 }}
                 placeholder="Year"
-                placeholderTextColor="#999"
                 keyboardType="numeric"
                 maxLength={4}
               />
@@ -214,12 +211,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.vin')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.vin}
                 onChangeText={(text) => updateFormData('vin', text)}
                 placeholder={t('vehicleForm.vinPlaceholder') || 'VIN'}
-                placeholderTextColor="#999"
                 autoCapitalize="characters"
                 maxLength={17}
               />
@@ -230,12 +226,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.color')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.color}
                 onChangeText={(text) => updateFormData('color', text)}
                 placeholder={t('vehicleForm.colorPlaceholder') || 'Color'}
-                placeholderTextColor="#999"
                 autoCapitalize="words"
               />
             </ThemedView>
@@ -257,12 +252,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.insuranceCompany')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.insuranceCompany}
                 onChangeText={(text) => updateFormData('insuranceCompany', text)}
                 placeholder={t('vehicleForm.insuranceCompanyPlaceholder') || 'Insurance Company'}
-                placeholderTextColor="#999"
                 autoCapitalize="words"
               />
             </ThemedView>
@@ -272,12 +266,11 @@ export default function AddVehicleScreen() {
           <View style={styles.inputGroup}>
             <ThemedText style={styles.label}>{t('vehicleForm.policyNumber')}</ThemedText>
             <ThemedView style={[styles.input, { borderColor }]}>
-              <TextInput
+              <ThemedTextInput
                 style={styles.inputText}
                 value={formData.policyNumber}
                 onChangeText={(text) => updateFormData('policyNumber', text)}
                 placeholder={t('vehicleForm.policyNumberPlaceholder') || 'Policy Number'}
-                placeholderTextColor="#999"
                 autoCapitalize="characters"
               />
             </ThemedView>

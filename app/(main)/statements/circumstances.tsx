@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { ThemedTextInput } from '@/components/themed-text-input';
+import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { useTranslation } from 'react-i18next';
 
 const CIRCUMSTANCES = [
@@ -92,6 +93,9 @@ export default function StatementCircumstancesScreen() {
   const borderColor = useThemeColor({ light: '#e1e1e1', dark: '#333' }, 'icon');
   const selectedBorderColor = useThemeColor({}, 'tint');
   const inputBackgroundColor = useThemeColor({ light: '#f5f5f5', dark: '#333' }, 'background');
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
   const textColor = useThemeColor({}, 'text');
 
   const handleSpeedChange = (text: string) => {
@@ -322,7 +326,7 @@ export default function StatementCircumstancesScreen() {
                 value={speed}
                 onChangeText={handleSpeedChange}
                 placeholder={t('statementCircumstances.speedPlaceholder') as string}
-                placeholderTextColor="rgba(128, 128, 128, 0.8)"
+                placeholderTextColor={useThemeColor({ light: 'rgba(128, 128, 128, 0.8)', dark: 'rgba(170, 170, 170, 0.8)' }, 'icon')}
                 keyboardType="numeric"
                 maxLength={3}
               />
@@ -336,20 +340,11 @@ export default function StatementCircumstancesScreen() {
               {t('statementCircumstances.detailedDescription')}
             </ThemedText>
             
-            <TextInput
-              style={[
-                styles.input,
-                styles.textArea,
-                { 
-                  backgroundColor: inputBackgroundColor,
-                  color: textColor,
-                  borderColor
-                }
-              ]}
+            <ThemedTextInput
+              style={[styles.input, styles.textArea]}
               value={description}
               onChangeText={setDescription}
               placeholder={t('statementCircumstances.descriptionPlaceholder') as string}
-              placeholderTextColor="rgba(128, 128, 128, 0.8)"
               multiline
               numberOfLines={6}
               textAlignVertical="top"
@@ -368,7 +363,7 @@ export default function StatementCircumstancesScreen() {
             title={t('common.continue')}
             onPress={handleContinue}
             variant="primary"
-            style={styles.continueButton}
+            style={[styles.continueButton, { backgroundColor: primaryButtonColor }]}
             disabled={!selectedCircumstance || !description.trim()}
           />
         </View>
@@ -505,6 +500,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   continueButton: {
-    backgroundColor: '#4CAF50',
   },
 });

@@ -10,13 +10,6 @@ import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { ClaimStatement, useStatementsStore } from '@/stores/use-statements-store';
 import { useTranslation } from 'react-i18next';
 
-const STATUS_COLORS = {
-  draft: '#FF9800',
-  submitted: '#2196F3',
-  processing: '#FF5722',
-  completed: '#4CAF50',
-};
-
 const STATUS_ICONS = {
   draft: '📝',
   submitted: '📤',
@@ -39,6 +32,26 @@ export default function StatementsScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useCustomThemeColor({ light: '#ffffff', dark: '#1c1c1c' });
   const borderColor = useCustomThemeColor({ light: '#e1e1e1', dark: '#333' });
+  
+  // Additional theme-aware colors
+  const primaryButtonColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+  
+  // Theme-aware status colors (defined at top level)
+  const draftColor = useCustomThemeColor({ light: '#FF9800', dark: '#FFB74D' });
+  const submittedColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+  const processingColor = useCustomThemeColor({ light: '#FF5722', dark: '#FF7043' });
+  const completedColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+
+  // Theme-aware status colors
+  const getStatusColor = (status: string) => {
+    const colors = {
+      draft: draftColor,
+      submitted: submittedColor,
+      processing: processingColor,
+      completed: completedColor,
+    };
+    return colors[status as keyof typeof colors] || colors.draft;
+  };
 
   useEffect(() => {
     loadStatements();
@@ -73,7 +86,7 @@ export default function StatementsScreen() {
   };
 
   const renderStatementCard = ({ item: statement }: { item: ClaimStatement }) => {
-    const statusColor = STATUS_COLORS[statement.status];
+    const statusColor = getStatusColor(statement.status);
     const statusIcon = STATUS_ICONS[statement.status];
     
     return (
@@ -176,7 +189,7 @@ export default function StatementsScreen() {
         title={t('statements.createNew')}
         onPress={handleCreateStatement}
         variant="primary"
-        style={styles.emptyActionButton}
+        style={[styles.emptyActionButton, { backgroundColor: primaryButtonColor }]}
       />
     </View>
   );
@@ -197,7 +210,7 @@ export default function StatementsScreen() {
           title={t('statements.createNew')}
           onPress={handleCreateStatement}
           variant="primary"
-          style={styles.createButton}
+          style={[styles.createButton, { backgroundColor: primaryButtonColor }]}
         />
       )}
     </View>
@@ -252,7 +265,6 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginLeft: 16,
-    backgroundColor: '#4CAF50',
   },
   statementCard: {
     borderWidth: 1,
@@ -318,7 +330,6 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     fontFamily: 'monospace',
-    color: '#2196F3',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -376,7 +387,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   emptyActionButton: {
-    backgroundColor: '#4CAF50',
     minWidth: 200,
   },
 });

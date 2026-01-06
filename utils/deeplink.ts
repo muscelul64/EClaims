@@ -34,9 +34,6 @@ class FirebaseJWTVerifier {
       const header = JSON.parse(this.base64URLDecode(parts[0]));
       const payload = JSON.parse(this.base64URLDecode(parts[1]));
       
-      console.log('🔍 JWT Header:', header);
-      console.log('🔍 JWT Payload (issuer):', payload.iss);
-      
       // Validate basic Firebase JWT structure
       if (header.alg !== 'RS256') {
         throw new Error('Unsupported algorithm, expected RS256');
@@ -53,7 +50,6 @@ class FirebaseJWTVerifier {
 
       // For production, implement full signature verification against Google's public keys
       // For now, return the payload after basic validation
-      console.log('✅ Firebase JWT validated (basic checks passed)');
       return payload as FirebaseJWTPayload;
       
     } catch (error) {
@@ -100,15 +96,6 @@ export class UniversalLinkManager {
   private pendingDeepLink?: string;
   private navigationReady: boolean = false;
   
-  // Global event tracking for debugging
-  public static debugEvents: {timestamp: string, event: string, data?: any}[] = [];
-  
-  static addDebugEvent(event: string, data?: any) {
-    const timestamp = new Date().toISOString();
-    UniversalLinkManager.debugEvents = [...UniversalLinkManager.debugEvents.slice(-20), { timestamp, event, data }];
-    console.log(`🔍 [${timestamp}] ${event}`, data);
-  }
-  
   static getInstance(): UniversalLinkManager {
     if (!UniversalLinkManager.instance) {
       UniversalLinkManager.instance = new UniversalLinkManager();
@@ -119,7 +106,6 @@ export class UniversalLinkManager {
   // Set navigation ready state
   setNavigationReady(ready: boolean) {
     this.navigationReady = ready;
-    UniversalLinkManager.addDebugEvent('NAVIGATION_STATE_CHANGED', { ready });
   }
 
   // Safe navigation with retry logic
@@ -127,22 +113,17 @@ export class UniversalLinkManager {
     return new Promise((resolve, reject) => {
       const attemptNavigation = (attempt: number) => {
         if (!this.navigationReady && attempt === 1) {
-          console.log(`⏳ Navigation not ready yet, waiting... (attempt ${attempt})`);
           setTimeout(() => attemptNavigation(attempt + 1), retryDelay);
           return;
         }
 
         try {
           router.push(route as any);
-          console.log(`✅ Navigation successful to ${route}`);
-          UniversalLinkManager.addDebugEvent('NAVIGATION_SUCCESS', { route, attempt });
           resolve();
-        } catch (error) {
-          console.error(`❌ Navigation failed (attempt ${attempt}):`, error);
+        } catch {
           if (attempt < maxRetries) {
             setTimeout(() => attemptNavigation(attempt + 1), retryDelay);
           } else {
-            UniversalLinkManager.addDebugEvent('NAVIGATION_FAILED', { route, attempts: maxRetries, error: String(error) });
             // Final fallback - try to go to home
             try {
               router.replace('/');
@@ -165,23 +146,11 @@ export class UniversalLinkManager {
 
   // Initialize the Universal Link system
   initialize() {
-    UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_SYSTEM_INIT', { platform: Platform.OS });
-    
     this.registerDefaultHandlers();
     this.setupLinkingListener();
     this.handleInitialURL();
-    
-    // Add debug logging for testing
-    console.log('🔗 Universal Link Manager initialized');
-    console.log('📍 Environment:', ENV_CONFIG.UNIVERSAL_LINK_HOST);
   }
   
-  // Test method for debugging Universal Links
-  testUniversalLink(url: string) {
-    console.log('🧪 Testing Universal Link:', url);
-    this.handleUniversalLink({ url });
-  }
-
   // Update authentication status
   setAuthenticationStatus(isAuthenticated: boolean) {
     this.isAuthenticated = isAuthenticated;
@@ -195,7 +164,6 @@ export class UniversalLinkManager {
   // Setup the listener for incoming Universal Links
   private setupLinkingListener() {
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_RECEIVED_FOREGROUND', { url: url.substring(0, 100) + '...' });
       this.handleUniversalLink({ url });
     });
     return subscription;
@@ -206,13 +174,9 @@ export class UniversalLinkManager {
     try {
       const initialURL = await Linking.getInitialURL();
       if (initialURL) {
-        UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_INITIAL_URL', { url: initialURL.substring(0, 100) + '...' });
         setTimeout(() => this.handleUniversalLink({ url: initialURL }), 1000);
-      } else {
-        UniversalLinkManager.addDebugEvent('NO_INITIAL_URL');
       }
     } catch (error) {
-      UniversalLinkManager.addDebugEvent('INITIAL_URL_ERROR', { error: error?.toString() });
       console.warn('Error handling initial URL:', error);
     }
   }
@@ -220,61 +184,45 @@ export class UniversalLinkManager {
   // Main Universal Link handler
   private async handleUniversalLink({ url }: { url: string }) {
     try {
-      UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_PROCESSING_START', { url: url.substring(0, 100) + '...' });
-      console.log('🚀 Processing Universal Link:', url);
-      
-      // Visual debug for iOS TestFlight
-      if (Platform.OS === 'ios') {
-        Alert.alert('🔗 Universal Link Received', `URL: ${url.substring(0, 100)}...`, [{ text: 'OK' }]);
-      }
-      
       const parsed = await this.parseURL(url);
       if (!parsed) {
-        console.warn('❌ Could not parse Universal Link:', url);
-        UniversalLinkManager.addDebugEvent('URL_PARSE_FAILED', { url: url.substring(0, 100) + '...' });
+        console.warn('Could not parse Universal Link:', url);
         return;
       }
 
-      UniversalLinkManager.addDebugEvent('URL_PARSED', { action: parsed.action, paramsKeys: Object.keys(parsed.params), hasToken: !!parsed.authToken });
       const { action, params, authToken } = parsed;
-      console.log(`🎯 Parsed Universal Link - Action: ${action}, Params:`, Object.keys(params));
       
       const handler = this.handlers.get(action);
 
       if (!handler) {
-        console.warn('❌ No handler found for action:', action);
-        console.log('📋 Available handlers:', Array.from(this.handlers.keys()));
+        console.warn('No handler found for action:', action);
         this.showUniversalLinkError(`Unknown action: ${action}`);
         return;
       }
 
-      console.log(`✅ Found handler for action: ${action}`);
-
       // Handle token authentication first if present
       if (authToken) {
-        console.log('🔐 Processing authentication token...');
         if (!handler.allowsTokenAuth) {
-          console.warn('❌ Token authentication not allowed for action:', action);
+          console.warn('Token authentication not allowed for action:', action);
           this.showUniversalLinkError('Token authentication not supported for this action');
           return;
         }
 
         if (!this.onTokenAuthenticate) {
-          console.warn('❌ Token authenticator not set');
+          console.warn('Token authenticator not set');
           this.showUniversalLinkError('Token authentication not configured');
           return;
         }
 
         // Validate token
         if (!this.isTokenValid(authToken)) {
-          console.warn('❌ Invalid or expired token');
+          console.warn('Invalid or expired token');
           this.showUniversalLinkError('Authentication token is invalid or expired');
           return;
         }
 
         // Attempt token authentication
         try {
-          console.log('🔑 Attempting token authentication...');
           // Pass parameters to token authenticator for Universal Link context
           const authParams = {
             ...params,
@@ -286,55 +234,38 @@ export class UniversalLinkManager {
             this.showUniversalLinkError('Authentication failed');
             return;
           }
-          
-          console.log('✅ Token authentication successful');
           // Update authentication status
           this.setAuthenticationStatus(true);
-        } catch (error) {
-          console.error('❌ Token authentication error:', error);
+        } catch (err) {
+          console.error('Token authentication error:', err);
           this.showUniversalLinkError('Authentication error occurred');
           return;
         }
-      } else {
-        console.log('ℹ️ No authentication token provided');
       }
 
       // Check authentication requirement
       if (handler.requiresAuth && !this.isAuthenticated && !authToken) {
-        console.warn('❌ Authentication required for action:', action);
+        console.warn('Authentication required for action:', action);
         this.handleAuthRequiredUniversalLink(url);
         return;
       }
 
       // Execute the handler
-      console.log(`🚀 Executing handler for action: ${action}`);
-      console.log('📦 Handler params:', params);
-      UniversalLinkManager.addDebugEvent('HANDLER_EXECUTING', { action, paramsKeys: Object.keys(params) });
-
+      
       // Wait for navigation to be ready before executing handler
       if (!this.navigationReady) {
-        console.log('⏳ Navigation not ready, waiting for navigation system to initialize...');
         const maxWaitTime = 5000; // 5 seconds max wait
         const startTime = Date.now();
         
         while (!this.navigationReady && (Date.now() - startTime) < maxWaitTime) {
           await new Promise(resolve => setTimeout(resolve, 100)); // Check every 100ms
         }
-        
-        if (!this.navigationReady) {
-          console.warn('⚠️ Navigation ready timeout, proceeding anyway');
-        } else {
-          console.log('✅ Navigation system ready, executing handler');
-        }
       }
 
       try {
         await handler.handler(params, authToken);
-        console.log(`✅ Handler execution completed for action: ${action}`);
-        UniversalLinkManager.addDebugEvent('HANDLER_COMPLETED', { action });
       } catch (handlerError) {
-        console.error(`❌ Handler execution failed for action: ${action}`, handlerError);
-        UniversalLinkManager.addDebugEvent('HANDLER_ERROR', { action, error: handlerError?.toString() });
+        console.error(`Handler execution failed for action: ${action}`, handlerError);
         this.showUniversalLinkError('Error processing Universal Link');
       }
 
@@ -407,29 +338,22 @@ export class UniversalLinkManager {
       console.log('📝 All URL parts:', parts);
       console.log('📝 Original URL:', url);
       console.log('📝 Cleaned URL:', cleanURL);
-      UniversalLinkManager.addDebugEvent('ACTION_EXTRACTED', { action, parts, originalUrl: url, cleanedUrl: cleanURL });
       
       // Validate action is one of the supported actions
       const validActions = ['home', 'vehicles', 'vehicle', 'add-vehicle', 'damage', 'camera', 'statement', 'statements', 'new-statement', 'emergency', 'settings', 'login'];
       
       // Special case: if action is the scheme name, it means URL parsing failed
       if (action === 'porscheeclaims' || action.includes('porscheeclaims')) {
-        console.error(`❌ Action contains scheme name: "${action}". This indicates URL parsing issue.`);
-        console.log('📝 Full URL parts:', parts);
-        console.log('📝 Original URL:', url);
-        console.log('📝 Cleaned URL:', cleanURL);
-        UniversalLinkManager.addDebugEvent('SCHEME_IN_ACTION', { action, parts, originalUrl: url, cleanedUrl: cleanURL });
+        console.error(`Action contains scheme name: "${action}". This indicates URL parsing issue.`);
         
         // Try to recover by looking for valid action in the parts
         const validActionInParts = parts.find(part => validActions.includes(part));
         if (validActionInParts) {
-          console.log(`🔧 Found valid action in parts: ${validActionInParts}`);
           return await this.parseURL(url.replace(action + '/', ''));
         }
         
         // Fallback to vehicles if this looks like a vehicle-related URL
         if (url.includes('vehicleData') || url.includes('/vehicles')) {
-          console.log('🔧 Detected vehicle data, falling back to vehicles action');
           const authToken = await this.parseAuthToken(queryPart);
           return { action: 'vehicles', params: {}, authToken };
         }
@@ -440,10 +364,7 @@ export class UniversalLinkManager {
       }
       
       if (!validActions.includes(action)) {
-        console.error(`❌ Invalid action: "${action}". Valid actions are:`, validActions);
-        console.log('📝 Full URL parts:', parts);
-        console.log('📝 Original URL:', url);
-        UniversalLinkManager.addDebugEvent('INVALID_ACTION', { action, validActions });
+        console.error(`Invalid action: "${action}". Valid actions are:`, validActions);
         return { action: 'home', params: {}, authToken: undefined }; // Fallback to home
       }
 
@@ -453,15 +374,11 @@ export class UniversalLinkManager {
       // Parse query parameters for token and other data
       if (queryPart) {
         const queryParams = new URLSearchParams(queryPart);
-        console.log('🔍 Found', queryParams.size, 'query parameters');
-        UniversalLinkManager.addDebugEvent('QUERY_PARAMS_FOUND', { count: queryParams.size, keys: Array.from(queryParams.keys()) });
         
         // Extract authentication token
         const tokenString = queryParams.get('token');
         if (tokenString) {
           authToken = await this.parseAuthToken(tokenString);
-          console.log('📝 Auth token extracted:', authToken?.userId ? 'Valid' : 'Invalid');
-          UniversalLinkManager.addDebugEvent('TOKEN_EXTRACTED', { valid: !!authToken?.userId });
         }
         
         // Extract other query parameters (including vehicleData and secureData)
@@ -470,15 +387,12 @@ export class UniversalLinkManager {
             params[key] = decodeURIComponent(value);
             if (key === 'vehicleData' || key === 'secureData') {
               console.log(`📦 Found ${key} parameter (length: ${value.length})`);
-              UniversalLinkManager.addDebugEvent('VEHICLE_DATA_PARAM_FOUND', { key, length: value.length, preview: value.substring(0, 20) + '...' });
             } else {
               console.log(`📝 Parameter ${key}:`, value.substring(0, 50));
             }
           }
         }
       } else {
-        console.log('📭 No query parameters found in URL');
-        UniversalLinkManager.addDebugEvent('NO_QUERY_PARAMS');
       }
 
       // Parse URL parameters based on action
@@ -687,33 +601,14 @@ pattern: 'https://*/statement/:id',
     this.registerHandler('vehicles', {
 pattern: 'https://*/vehicles',
       handler: async (params, authToken) => {
-        // Create visible debug alerts for TestFlight
-        const showDebugAlert = (title: string, message: string) => {
-          if (Platform.OS === 'ios') {
-            setTimeout(() => {
-              Alert.alert(`🔍 ${title}`, message, [{ text: 'OK' }]);
-            }, 100);
-          }
-        };
-
-        console.log('🚗 === VEHICLES HANDLER START ===');
-        console.log('Platform:', Platform.OS);
-        console.log('Handler called with params:', JSON.stringify(params, null, 2));
-        console.log('Auth token present:', !!authToken);
-        
-        showDebugAlert('Vehicles Handler', `Platform: ${Platform.OS}\nParams: ${Object.keys(params).join(', ')}\nToken: ${!!authToken ? 'YES' : 'NO'}`);
         
         // Handle vehicle data from Universal Link - SMART VERSION  
         // Support both vehicleData (legacy base64) and secureData (encrypted) parameters
         const vehicleDataParam = params.vehicleData || params.secureData;
-        console.log('Vehicle data parameter found:', !!vehicleDataParam);
-        console.log('Vehicle data param length:', vehicleDataParam?.length || 0);
         
         if (vehicleDataParam) {
-          showDebugAlert('Vehicle Data Found', `Length: ${vehicleDataParam?.length || 0}\nType: ${params.vehicleData ? 'vehicleData' : 'secureData'}`);
           
           try {
-            console.log('🔍 Attempting to decode vehicle data...');
             // Import secure communication utility
             const { secureCommunication } = await import('./secure-communication');
             
@@ -721,10 +616,7 @@ pattern: 'https://*/vehicles',
             const decodedVehicleData = secureCommunication.smartExtractVehicleData(vehicleDataParam);
             
             if (!decodedVehicleData) {
-              console.error('❌ Failed to decode vehicle data in any format');
-              console.log('Attempted to parse vehicle data parameter:', vehicleDataParam?.substring(0, 50) + '...');
-              console.log('Parameter type check:', typeof vehicleDataParam);
-              showDebugAlert('Decode Failed', 'Unable to decode vehicle data from Universal Link');
+              console.error('Failed to decode vehicle data in any format');
               Alert.alert('Error', 'Unable to process vehicle data from Universal Link');
               return;
             }
@@ -737,8 +629,6 @@ pattern: 'https://*/vehicles',
               vehicleId: decodedVehicleData.vehicleId,
               licensePlate: decodedVehicleData.licensePlate
             });
-            
-            showDebugAlert('Decode Success', `${decodedVehicleData.make} ${decodedVehicleData.model}\nVIN: ${decodedVehicleData.vin?.substring(0, 8)}...\nPlate: ${decodedVehicleData.licensePlate}`);
             
             // Import the vehicles store
             console.log('🗃️ Importing vehicles store...');
@@ -776,13 +666,8 @@ pattern: 'https://*/vehicles',
             // Get the newly created vehicle to get the actual ID
             const updatedVehicles = vehiclesStore.vehicles;
             const addedVehicle = updatedVehicles[updatedVehicles.length - 1];
-            console.log('Added vehicle ID:', addedVehicle?.id);
-            console.log('Total vehicles after add:', updatedVehicles.length);
-            
-            showDebugAlert('Vehicle Added', `Added: ${addedVehicle?.make} ${addedVehicle?.model}\nID: ${addedVehicle?.id?.substring(0, 8)}...\nTotal vehicles: ${updatedVehicles.length}`);
             
             // Set Universal Link context for vehicle restriction
-            console.log('🔒 Setting Universal Link context...');
             const { useUserStore } = await import('@/stores/use-user-store');
             const userStore = useUserStore.getState();
             
@@ -794,23 +679,15 @@ pattern: 'https://*/vehicles',
             };
             
             userStore.setUniversalLinkContext(contextData);
-            console.log('Universal Link context set:', JSON.stringify(contextData, null, 2));
-            
-            showDebugAlert('Context Set', `Restriction: YES\nAllowed ID: ${addedVehicle?.id?.substring(0, 8)}...\nVehicle data preserved`);
-            
-            console.log('✅ Vehicle processing completed successfully');
             console.log('🚗 === VEHICLES HANDLER END ===');
             
           } catch (error: any) {
-            console.error('❌ Error in vehicles handler:', error);
-            console.error('Error details:', JSON.stringify(error, null, 2));
-            showDebugAlert('Handler Error', `${error?.message || 'Unknown error'}\n\nCheck debug component for details`);
+            console.error('Error in vehicles handler:', error);
             Alert.alert('Error', `Failed to process vehicle data: ${error?.message || 'Unknown error'}`);
             return;
           }
         } else {
-          console.log('ℹ️ No vehicle data parameter found, showing regular vehicles screen');
-          showDebugAlert('No Vehicle Data', 'No vehicleData or secureData parameter found in URL');
+          // No vehicle data parameter found, showing regular vehicles screen
         }
         
         // Navigate to vehicles page
@@ -819,7 +696,6 @@ pattern: 'https://*/vehicles',
         }
         
         console.log('🚀 Navigating to vehicles...');
-        UniversalLinkManager.addDebugEvent('NAVIGATION_ATTEMPT', { route: 'vehicles', hasAuth: !!authToken });
         
         // Add delay to ensure Root Layout is fully mounted
         console.log('⏳ Preparing to navigate to vehicles...');

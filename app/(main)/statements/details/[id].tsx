@@ -9,19 +9,43 @@ import { useCustomThemeColor, useThemeColor } from '@/hooks/use-theme-color';
 import { ClaimStatement, useStatementsStore } from '@/stores/use-statements-store';
 import { useTranslation } from 'react-i18next';
 
-const STATUS_COLORS = {
-  draft: '#FF9800',
-  submitted: '#2196F3',
-  processing: '#FF5722',
-  completed: '#4CAF50',
-};
-
 export default function StatementDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { t } = useTranslation();
   const { getStatement, deleteStatement, updateStatement } = useStatementsStore();
   const [statement, setStatement] = useState<ClaimStatement | null>(null);
+  
+  // Theme-aware status colors
+  const getStatusColor = (status: string) => {
+    const draftColor = useCustomThemeColor({ light: '#FF9800', dark: '#FFB74D' });
+    const submittedColor = useCustomThemeColor({ light: '#2196F3', dark: '#64B5F6' });
+    const processingColor = useCustomThemeColor({ light: '#FF5722', dark: '#FF7043' });
+    const completedColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+    
+    const colors = {
+      draft: draftColor,
+      submitted: submittedColor,
+      processing: processingColor,
+      completed: completedColor,
+    };
+    return colors[status as keyof typeof colors] || colors.draft;
+  };
+  
+  // Theme-aware severity colors
+  const getSeverityColor = (severity: string) => {
+    const minorColor = useCustomThemeColor({ light: '#4CAF50', dark: '#66BB6A' });
+    const moderateColor = useCustomThemeColor({ light: '#FF9800', dark: '#FFB74D' });
+    const severeColor = useCustomThemeColor({ light: '#F44336', dark: '#FF7043' });
+    const defaultColor = useCustomThemeColor({ light: '#9E9E9E', dark: '#757575' });
+    
+    switch (severity) {
+      case 'minor': return minorColor;
+      case 'moderate': return moderateColor;
+      case 'severe': return severeColor;
+      default: return defaultColor;
+    }
+  };
   
   const backgroundColor = useThemeColor({}, 'background');
   const cardBackgroundColor = useCustomThemeColor({ light: '#ffffff', dark: '#1c1c1c' });
@@ -328,15 +352,6 @@ export default function StatementDetailsScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function getSeverityColor(severity: string) {
-  switch (severity) {
-    case 'minor': return '#4CAF50';
-    case 'moderate': return '#FF9800';
-    case 'severe': return '#F44336';
-    default: return '#9E9E9E';
-  }
 }
 
 const styles = StyleSheet.create({
