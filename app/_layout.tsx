@@ -7,17 +7,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authTokenManager } from '@/utils/auth-token';
-import { deepLinkManager } from '@/utils/deeplink';
+import { universalLinkManager } from '@/utils/deeplink';
 import { masterAppIntegration } from '@/utils/master-app-integration';
 import I18nProvider from './i18n-provider';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  // Initialize deeplink system and master app integration
+  // Initialize Universal Link system and master app integration
   useEffect(() => {
-    // Initialize core systems
-    deepLinkManager.initialize();
+    // Initialize auth token manager
     authTokenManager.initialize();
     
     // Initialize master app integration
@@ -29,6 +28,18 @@ export default function RootLayout() {
     masterAppIntegration.initialize();
 
     console.log('Porsche E-Claims initialized with master app integration');
+
+    // Signal that navigation is ready for universal links after a short delay
+    const navigationTimer = setTimeout(() => {
+      console.log('[RootLayout] Setting navigation ready for universal links');
+      universalLinkManager.setNavigationReady(true);
+    }, 1500); // Allow navigation stack to fully mount
+
+    return () => {
+      clearTimeout(navigationTimer);
+      // Clean up when component unmounts
+      universalLinkManager.setNavigationReady(false);
+    };
   }, []);
 
   return (

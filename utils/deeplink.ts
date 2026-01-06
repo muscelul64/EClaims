@@ -1,11 +1,75 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { ENV_CONFIG } from './environment';
 
-// Deeplink URL structure:
-// porscheeclaims://action/param1/param2?token=auth_token
+// Universal Link URL structure:
 // https://eclaims.deactech.com/action/param1/param2?token=auth_token
+
+/**
+ * Firebase JWT verification utilities
+ */
+interface FirebaseJWTPayload {
+  name?: string;
+  email?: string;
+  user_id?: string;
+  sub?: string;
+  iss: string;
+  aud: string;
+  exp: number;
+  iat: number;
+  auth_time?: number;
+  [key: string]: any;
+}
+
+class FirebaseJWTVerifier {
+  static async verifyFirebaseJWT(token: string): Promise<FirebaseJWTPayload | null> {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid JWT format');
+      }
+
+      // Decode header and payload
+      const header = JSON.parse(this.base64URLDecode(parts[0]));
+      const payload = JSON.parse(this.base64URLDecode(parts[1]));
+      
+      console.log('🔍 JWT Header:', header);
+      console.log('🔍 JWT Payload (issuer):', payload.iss);
+      
+      // Validate basic Firebase JWT structure
+      if (header.alg !== 'RS256') {
+        throw new Error('Unsupported algorithm, expected RS256');
+      }
+
+      if (!payload.iss || !payload.iss.includes('securetoken.google.com')) {
+        throw new Error('Invalid issuer, expected Firebase token');
+      }
+
+      // Check expiration
+      if (payload.exp && Date.now() / 1000 > payload.exp) {
+        throw new Error('Token expired');
+      }
+
+      // For production, implement full signature verification against Google's public keys
+      // For now, return the payload after basic validation
+      console.log('✅ Firebase JWT validated (basic checks passed)');
+      return payload as FirebaseJWTPayload;
+      
+    } catch (error) {
+      console.error('Firebase JWT verification failed:', error);
+      return null;
+    }
+  }
+
+  private static base64URLDecode(str: string): string {
+    // Add padding if needed
+    str += '='.repeat((4 - str.length % 4) % 4);
+    // Replace URL-safe characters
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    return decodeURIComponent(escape(atob(str)));
+  }
+}
 
 export interface AuthToken {
   token: string;
@@ -14,7 +78,7 @@ export interface AuthToken {
   scope?: string[];
 }
 
-export interface DeepLinkHandler {
+export interface UniversalLinkHandler {
   pattern: string;
   handler: (params: any, authToken?: AuthToken) => void;
   requiresAuth?: boolean;
@@ -28,17 +92,70 @@ interface ParsedURL {
   authToken?: AuthToken;
 }
 
-export class DeepLinkManager {
-  private static instance: DeepLinkManager;
-  private handlers: Map<string, DeepLinkHandler> = new Map();
+export class UniversalLinkManager {
+  private static instance: UniversalLinkManager;
+  private handlers: Map<string, UniversalLinkHandler> = new Map();
   private isAuthenticated: boolean = false;
   private onTokenAuthenticate?: (token: AuthToken, params?: any) => Promise<boolean>;
+  private pendingDeepLink?: string;
+  private navigationReady: boolean = false;
   
-  static getInstance(): DeepLinkManager {
-    if (!DeepLinkManager.instance) {
-      DeepLinkManager.instance = new DeepLinkManager();
+  // Global event tracking for debugging
+  public static debugEvents: {timestamp: string, event: string, data?: any}[] = [];
+  
+  static addDebugEvent(event: string, data?: any) {
+    const timestamp = new Date().toISOString();
+    UniversalLinkManager.debugEvents = [...UniversalLinkManager.debugEvents.slice(-20), { timestamp, event, data }];
+    console.log(`🔍 [${timestamp}] ${event}`, data);
+  }
+  
+  static getInstance(): UniversalLinkManager {
+    if (!UniversalLinkManager.instance) {
+      UniversalLinkManager.instance = new UniversalLinkManager();
     }
-    return DeepLinkManager.instance;
+    return UniversalLinkManager.instance;
+  }
+
+  // Set navigation ready state
+  setNavigationReady(ready: boolean) {
+    this.navigationReady = ready;
+    UniversalLinkManager.addDebugEvent('NAVIGATION_STATE_CHANGED', { ready });
+  }
+
+  // Safe navigation with retry logic
+  private safeNavigate(route: string, maxRetries = 3, retryDelay = 1000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const attemptNavigation = (attempt: number) => {
+        if (!this.navigationReady && attempt === 1) {
+          console.log(`⏳ Navigation not ready yet, waiting... (attempt ${attempt})`);
+          setTimeout(() => attemptNavigation(attempt + 1), retryDelay);
+          return;
+        }
+
+        try {
+          router.push(route as any);
+          console.log(`✅ Navigation successful to ${route}`);
+          UniversalLinkManager.addDebugEvent('NAVIGATION_SUCCESS', { route, attempt });
+          resolve();
+        } catch (error) {
+          console.error(`❌ Navigation failed (attempt ${attempt}):`, error);
+          if (attempt < maxRetries) {
+            setTimeout(() => attemptNavigation(attempt + 1), retryDelay);
+          } else {
+            UniversalLinkManager.addDebugEvent('NAVIGATION_FAILED', { route, attempts: maxRetries, error: String(error) });
+            // Final fallback - try to go to home
+            try {
+              router.replace('/');
+              resolve();
+            } catch (fallbackError) {
+              reject(fallbackError);
+            }
+          }
+        }
+      };
+
+      attemptNavigation(1);
+    });
   }
 
   // Set the token authentication callback
@@ -46,22 +163,23 @@ export class DeepLinkManager {
     this.onTokenAuthenticate = callback;
   }
 
-  // Initialize the deeplink system
+  // Initialize the Universal Link system
   initialize() {
+    UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_SYSTEM_INIT', { platform: Platform.OS });
+    
     this.registerDefaultHandlers();
     this.setupLinkingListener();
     this.handleInitialURL();
     
     // Add debug logging for testing
-    console.log('🔗 Deeplink Manager initialized');
+    console.log('🔗 Universal Link Manager initialized');
     console.log('📍 Environment:', ENV_CONFIG.UNIVERSAL_LINK_HOST);
-    console.log('🔧 App Scheme:', ENV_CONFIG.APP_SCHEME);
   }
   
   // Test method for debugging Universal Links
   testUniversalLink(url: string) {
     console.log('🧪 Testing Universal Link:', url);
-    this.handleDeepLink({ url });
+    this.handleUniversalLink({ url });
   }
 
   // Update authentication status
@@ -69,48 +187,64 @@ export class DeepLinkManager {
     this.isAuthenticated = isAuthenticated;
   }
 
-  // Register a new deeplink handler
-  registerHandler(pattern: string, handler: DeepLinkHandler) {
+  // Register a new Universal Link handler
+  registerHandler(pattern: string, handler: UniversalLinkHandler) {
     this.handlers.set(pattern, handler);
   }
 
-  // Setup the listener for incoming deeplinks
+  // Setup the listener for incoming Universal Links
   private setupLinkingListener() {
-    const subscription = Linking.addEventListener('url', this.handleDeepLink.bind(this));
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_RECEIVED_FOREGROUND', { url: url.substring(0, 100) + '...' });
+      this.handleUniversalLink({ url });
+    });
     return subscription;
   }
 
-  // Handle initial URL when app is opened via deeplink
+  // Handle initial URL when app is opened via Universal Link
   private async handleInitialURL() {
     try {
       const initialURL = await Linking.getInitialURL();
       if (initialURL) {
-        setTimeout(() => this.handleDeepLink({ url: initialURL }), 1000);
+        UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_INITIAL_URL', { url: initialURL.substring(0, 100) + '...' });
+        setTimeout(() => this.handleUniversalLink({ url: initialURL }), 1000);
+      } else {
+        UniversalLinkManager.addDebugEvent('NO_INITIAL_URL');
       }
     } catch (error) {
+      UniversalLinkManager.addDebugEvent('INITIAL_URL_ERROR', { error: error?.toString() });
       console.warn('Error handling initial URL:', error);
     }
   }
 
-  // Main deeplink handler
-  private async handleDeepLink({ url }: { url: string }) {
+  // Main Universal Link handler
+  private async handleUniversalLink({ url }: { url: string }) {
     try {
-      console.log('🚀 Processing deeplink:', url);
+      UniversalLinkManager.addDebugEvent('UNIVERSAL_LINK_PROCESSING_START', { url: url.substring(0, 100) + '...' });
+      console.log('🚀 Processing Universal Link:', url);
+      
+      // Visual debug for iOS TestFlight
+      if (Platform.OS === 'ios') {
+        Alert.alert('🔗 Universal Link Received', `URL: ${url.substring(0, 100)}...`, [{ text: 'OK' }]);
+      }
+      
       const parsed = await this.parseURL(url);
       if (!parsed) {
-        console.warn('❌ Could not parse deeplink:', url);
+        console.warn('❌ Could not parse Universal Link:', url);
+        UniversalLinkManager.addDebugEvent('URL_PARSE_FAILED', { url: url.substring(0, 100) + '...' });
         return;
       }
 
+      UniversalLinkManager.addDebugEvent('URL_PARSED', { action: parsed.action, paramsKeys: Object.keys(parsed.params), hasToken: !!parsed.authToken });
       const { action, params, authToken } = parsed;
-      console.log(`🎯 Parsed deeplink - Action: ${action}, Params:`, Object.keys(params));
+      console.log(`🎯 Parsed Universal Link - Action: ${action}, Params:`, Object.keys(params));
       
       const handler = this.handlers.get(action);
 
       if (!handler) {
         console.warn('❌ No handler found for action:', action);
         console.log('📋 Available handlers:', Array.from(this.handlers.keys()));
-        this.showDeepLinkError(`Unknown action: ${action}`);
+        this.showUniversalLinkError(`Unknown action: ${action}`);
         return;
       }
 
@@ -121,27 +255,27 @@ export class DeepLinkManager {
         console.log('🔐 Processing authentication token...');
         if (!handler.allowsTokenAuth) {
           console.warn('❌ Token authentication not allowed for action:', action);
-          this.showDeepLinkError('Token authentication not supported for this action');
+          this.showUniversalLinkError('Token authentication not supported for this action');
           return;
         }
 
         if (!this.onTokenAuthenticate) {
           console.warn('❌ Token authenticator not set');
-          this.showDeepLinkError('Token authentication not configured');
+          this.showUniversalLinkError('Token authentication not configured');
           return;
         }
 
         // Validate token
         if (!this.isTokenValid(authToken)) {
           console.warn('❌ Invalid or expired token');
-          this.showDeepLinkError('Authentication token is invalid or expired');
+          this.showUniversalLinkError('Authentication token is invalid or expired');
           return;
         }
 
         // Attempt token authentication
         try {
           console.log('🔑 Attempting token authentication...');
-          // Pass parameters to token authenticator for deeplink context
+          // Pass parameters to token authenticator for Universal Link context
           const authParams = {
             ...params,
             originalUrl: url
@@ -149,7 +283,7 @@ export class DeepLinkManager {
           const authSuccess = await this.onTokenAuthenticate(authToken, authParams);
           if (!authSuccess) {
             console.warn('❌ Token authentication failed');
-            this.showDeepLinkError('Authentication failed');
+            this.showUniversalLinkError('Authentication failed');
             return;
           }
           
@@ -158,7 +292,7 @@ export class DeepLinkManager {
           this.setAuthenticationStatus(true);
         } catch (error) {
           console.error('❌ Token authentication error:', error);
-          this.showDeepLinkError('Authentication error occurred');
+          this.showUniversalLinkError('Authentication error occurred');
           return;
         }
       } else {
@@ -168,32 +302,55 @@ export class DeepLinkManager {
       // Check authentication requirement
       if (handler.requiresAuth && !this.isAuthenticated && !authToken) {
         console.warn('❌ Authentication required for action:', action);
-        this.handleAuthRequiredDeepLink(url);
+        this.handleAuthRequiredUniversalLink(url);
         return;
       }
 
       // Execute the handler
       console.log(`🚀 Executing handler for action: ${action}`);
       console.log('📦 Handler params:', params);
+      UniversalLinkManager.addDebugEvent('HANDLER_EXECUTING', { action, paramsKeys: Object.keys(params) });
+
+      // Wait for navigation to be ready before executing handler
+      if (!this.navigationReady) {
+        console.log('⏳ Navigation not ready, waiting for navigation system to initialize...');
+        const maxWaitTime = 5000; // 5 seconds max wait
+        const startTime = Date.now();
+        
+        while (!this.navigationReady && (Date.now() - startTime) < maxWaitTime) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Check every 100ms
+        }
+        
+        if (!this.navigationReady) {
+          console.warn('⚠️ Navigation ready timeout, proceeding anyway');
+        } else {
+          console.log('✅ Navigation system ready, executing handler');
+        }
+      }
+
       try {
         await handler.handler(params, authToken);
         console.log(`✅ Handler execution completed for action: ${action}`);
+        UniversalLinkManager.addDebugEvent('HANDLER_COMPLETED', { action });
       } catch (handlerError) {
         console.error(`❌ Handler execution failed for action: ${action}`, handlerError);
-        this.showDeepLinkError('Error processing deeplink');
+        UniversalLinkManager.addDebugEvent('HANDLER_ERROR', { action, error: handlerError?.toString() });
+        this.showUniversalLinkError('Error processing Universal Link');
       }
 
     } catch (error) {
-      console.error('❌ Error handling deeplink:', error);
-      this.showDeepLinkError('Invalid link format');
+      console.error('❌ Error handling Universal Link:', error);
+      this.showUniversalLinkError('Invalid link format');
     }
   }
 
   // Parse the incoming URL
   private async parseURL(url: string): Promise<ParsedURL | null> {
     try {
+      console.log('=== PARSE URL START ===');
       console.log('🔍 Parsing incoming URL:', url);
       console.log('📍 Current environment:', ENV_CONFIG.UNIVERSAL_LINK_HOST);
+      console.log('📱 Platform:', Platform.OS);
       
       // Handle both custom scheme and universal links
       let cleanURL = url;
@@ -210,36 +367,23 @@ export class DeepLinkManager {
       for (const host of universalLinkHosts) {
         const prefix = `https://${host}/`;
         if (url.startsWith(prefix)) {
-          cleanURL = url.replace(prefix, `${ENV_CONFIG.APP_SCHEME}://`);
+          cleanURL = url.replace(prefix, '');
           sourceType = `Universal Link (${host})`;
-          console.log(`✅ Detected Universal Link from ${host}, converted to:`, cleanURL);
+          console.log(`✅ Detected Universal Link from ${host}, cleaned to:`, cleanURL);
           foundUniversalLink = true;
           break;
         }
       }
       
       if (!foundUniversalLink) {
-        if (url.startsWith(`${ENV_CONFIG.APP_SCHEME}://`)) {
-          cleanURL = url.replace(`${ENV_CONFIG.APP_SCHEME}://`, '');
-          sourceType = 'Custom Scheme';
-          console.log('✅ Detected Custom Scheme, cleaned to:', cleanURL);
-        } else if (url.startsWith('porscheeclaims://')) {
-          // Handle legacy/hardcoded scheme
-          cleanURL = url.replace('porscheeclaims://', '');
-          sourceType = 'Legacy Custom Scheme';
-          console.log('✅ Detected Legacy Custom Scheme, cleaned to:', cleanURL);
-        } else {
-          console.warn('⚠️ Unknown URL scheme:', url);
-          console.log('Expected Universal Link hosts:', universalLinkHosts);
-          console.log('Expected Custom Scheme prefix:', `${ENV_CONFIG.APP_SCHEME}://`);
-        }
+        console.warn('⚠️ URL is not a supported Universal Link:', url);
+        console.log('Expected Universal Link hosts:', universalLinkHosts);
+        console.log('Note: Custom schemes are no longer supported, use Universal Links only');
+        return { action: 'home', params: {}, authToken: undefined };
       }
 
-      // Handle potential double scheme issue (iOS sometimes generates porscheeclaims://porscheeclaims/vehicles)
-      if (cleanURL.startsWith('porscheeclaims/')) {
-        cleanURL = cleanURL.replace('porscheeclaims/', '');
-        console.log('🔧 Fixed double scheme, cleaned to:', cleanURL);
-      }
+      // Universal Links should be clean at this point
+      console.log('✅ Processing Universal Link:', cleanURL);
 
       // Split URL and query parameters
       const [pathPart, queryPart] = cleanURL.split('?');
@@ -260,13 +404,46 @@ export class DeepLinkManager {
 
       const action = parts[0];
       console.log('🎯 Extracted action:', action);
+      console.log('📝 All URL parts:', parts);
+      console.log('📝 Original URL:', url);
+      console.log('📝 Cleaned URL:', cleanURL);
+      UniversalLinkManager.addDebugEvent('ACTION_EXTRACTED', { action, parts, originalUrl: url, cleanedUrl: cleanURL });
       
       // Validate action is one of the supported actions
       const validActions = ['home', 'vehicles', 'vehicle', 'add-vehicle', 'damage', 'camera', 'statement', 'statements', 'new-statement', 'emergency', 'settings', 'login'];
+      
+      // Special case: if action is the scheme name, it means URL parsing failed
+      if (action === 'porscheeclaims' || action.includes('porscheeclaims')) {
+        console.error(`❌ Action contains scheme name: "${action}". This indicates URL parsing issue.`);
+        console.log('📝 Full URL parts:', parts);
+        console.log('📝 Original URL:', url);
+        console.log('📝 Cleaned URL:', cleanURL);
+        UniversalLinkManager.addDebugEvent('SCHEME_IN_ACTION', { action, parts, originalUrl: url, cleanedUrl: cleanURL });
+        
+        // Try to recover by looking for valid action in the parts
+        const validActionInParts = parts.find(part => validActions.includes(part));
+        if (validActionInParts) {
+          console.log(`🔧 Found valid action in parts: ${validActionInParts}`);
+          return await this.parseURL(url.replace(action + '/', ''));
+        }
+        
+        // Fallback to vehicles if this looks like a vehicle-related URL
+        if (url.includes('vehicleData') || url.includes('/vehicles')) {
+          console.log('🔧 Detected vehicle data, falling back to vehicles action');
+          const authToken = await this.parseAuthToken(queryPart);
+          return { action: 'vehicles', params: {}, authToken };
+        }
+        
+        // Final fallback to home
+        const authToken = await this.parseAuthToken(queryPart);
+        return { action: 'home', params: {}, authToken };
+      }
+      
       if (!validActions.includes(action)) {
         console.error(`❌ Invalid action: "${action}". Valid actions are:`, validActions);
         console.log('📝 Full URL parts:', parts);
         console.log('📝 Original URL:', url);
+        UniversalLinkManager.addDebugEvent('INVALID_ACTION', { action, validActions });
         return { action: 'home', params: {}, authToken: undefined }; // Fallback to home
       }
 
@@ -277,12 +454,14 @@ export class DeepLinkManager {
       if (queryPart) {
         const queryParams = new URLSearchParams(queryPart);
         console.log('🔍 Found', queryParams.size, 'query parameters');
+        UniversalLinkManager.addDebugEvent('QUERY_PARAMS_FOUND', { count: queryParams.size, keys: Array.from(queryParams.keys()) });
         
         // Extract authentication token
         const tokenString = queryParams.get('token');
         if (tokenString) {
           authToken = await this.parseAuthToken(tokenString);
           console.log('📝 Auth token extracted:', authToken?.userId ? 'Valid' : 'Invalid');
+          UniversalLinkManager.addDebugEvent('TOKEN_EXTRACTED', { valid: !!authToken?.userId });
         }
         
         // Extract other query parameters (including vehicleData and secureData)
@@ -291,6 +470,7 @@ export class DeepLinkManager {
             params[key] = decodeURIComponent(value);
             if (key === 'vehicleData' || key === 'secureData') {
               console.log(`📦 Found ${key} parameter (length: ${value.length})`);
+              UniversalLinkManager.addDebugEvent('VEHICLE_DATA_PARAM_FOUND', { key, length: value.length, preview: value.substring(0, 20) + '...' });
             } else {
               console.log(`📝 Parameter ${key}:`, value.substring(0, 50));
             }
@@ -298,6 +478,7 @@ export class DeepLinkManager {
         }
       } else {
         console.log('📭 No query parameters found in URL');
+        UniversalLinkManager.addDebugEvent('NO_QUERY_PARAMS');
       }
 
       // Parse URL parameters based on action
@@ -343,12 +524,33 @@ export class DeepLinkManager {
   private async parseAuthToken(tokenString?: string): Promise<AuthToken | undefined> {
     if (!tokenString) return undefined;
     
+    console.log('🔐 Parsing authentication token...');
+    
     try {
-      // Try secure JWT parsing first
+      // Try Firebase JWT first (if it looks like a JWT)
+      if (tokenString.includes('.') && tokenString.split('.').length === 3) {
+        console.log('🔍 Attempting to parse as Firebase JWT...');
+        const firebaseResult = await FirebaseJWTVerifier.verifyFirebaseJWT(tokenString);
+        
+        if (firebaseResult) {
+          console.log('✅ Successfully parsed Firebase JWT');
+          return {
+            token: tokenString,
+            userId: firebaseResult.user_id || firebaseResult.sub || '',
+            expiresAt: firebaseResult.exp * 1000, // Convert to milliseconds
+            scope: firebaseResult.scope ? firebaseResult.scope.split(' ') : undefined
+          };
+        }
+        
+        console.log('⚠️ Not a Firebase JWT, trying secure JWT...');
+      }
+      
+      // Try secure JWT parsing 
       try {
         const { secureJWT } = await import('./secure-communication');
         const secureResult = secureJWT.verifyToken(tokenString);
         if (secureResult) {
+          console.log('✅ Successfully parsed secure encrypted JWT');
           return {
             token: tokenString,
             userId: secureResult.payload.userId || secureResult.payload.sub || '',
@@ -360,18 +562,22 @@ export class DeepLinkManager {
         console.warn('Secure token parsing failed, trying legacy methods:', secureError);
       }
       
-      // Handle legacy JWT-like tokens
+      // Handle legacy JWT-like tokens (basic JWT parsing)
       if (tokenString.includes('.')) {
-        // JWT-like token - decode payload
         const parts = tokenString.split('.');
         if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          return {
-            token: tokenString,
-            userId: payload.sub || payload.userId || '',
-            expiresAt: (payload.exp || 0) * 1000, // Convert to milliseconds
-            scope: payload.scope ? payload.scope.split(' ') : undefined
-          };
+          console.log('🔍 Attempting legacy JWT parsing...');
+          try {
+            const payload = JSON.parse(atob(parts[1]));
+            return {
+              token: tokenString,
+              userId: payload.sub || payload.userId || '',
+              expiresAt: (payload.exp || 0) * 1000, // Convert to milliseconds
+              scope: payload.scope ? payload.scope.split(' ') : undefined
+            };
+          } catch (jwtError) {
+            console.warn('Legacy JWT parsing failed:', jwtError);
+          }
         }
       }
       
@@ -431,7 +637,7 @@ export class DeepLinkManager {
   private registerDefaultHandlers() {
     // Home
     this.registerHandler('home', {
-      pattern: `${ENV_CONFIG.APP_SCHEME}://home`,
+      pattern: 'https://*/home',
       handler: () => router.replace('/'),
       requiresAuth: true,
       allowsTokenAuth: true,
@@ -440,8 +646,8 @@ export class DeepLinkManager {
 
     // New Statement
     this.registerHandler('new-statement', {
-      pattern: `${ENV_CONFIG.APP_SCHEME}://new-statement`,
-      handler: () => router.push('/(main)/statements/new'),
+      pattern: 'https://*/new-statement',
+      handler: () => setTimeout(() => router.push('/(main)/statements/new'), 2000),
       requiresAuth: true,
       allowsTokenAuth: true,
       description: 'Start a new insurance statement'
@@ -449,7 +655,7 @@ export class DeepLinkManager {
 
     // View Statement
     this.registerHandler('statement', {
-      pattern: 'porscheeclaims://statement/:id',
+pattern: 'https://*/statement/:id',
       handler: (params, authToken) => {
         if (params.statementId) {
           const mode = params.mode || 'view';
@@ -457,17 +663,20 @@ export class DeepLinkManager {
           if (authToken) {
             console.log('Accessing statement with authenticated token for user:', authToken.userId);
           }
-          switch (mode) {
-            case 'continue':
-              router.push('/(main)/statements/new');
-              break;
-            case 'edit':
-              router.push(`/(main)/statements/details/${params.statementId}`);
-              break;
-            default:
-              router.push('/(main)/statements');
-              break;
-          }
+          // Add delay to ensure Root Layout is fully mounted
+          setTimeout(() => {
+            switch (mode) {
+              case 'continue':
+                router.push('/(main)/statements/new');
+                break;
+              case 'edit':
+                router.push(`/(main)/statements/details/${params.statementId}`);
+                break;
+              default:
+                router.push('/(main)/statements');
+                break;
+            }
+          }, 2000);
         }
       },
       requiresAuth: true,
@@ -476,13 +685,35 @@ export class DeepLinkManager {
 
     // Vehicles
     this.registerHandler('vehicles', {
-      pattern: 'porscheeclaims://vehicles',
+pattern: 'https://*/vehicles',
       handler: async (params, authToken) => {
-        // Handle vehicle data from deeplink - SMART VERSION  
+        // Create visible debug alerts for TestFlight
+        const showDebugAlert = (title: string, message: string) => {
+          if (Platform.OS === 'ios') {
+            setTimeout(() => {
+              Alert.alert(`🔍 ${title}`, message, [{ text: 'OK' }]);
+            }, 100);
+          }
+        };
+
+        console.log('🚗 === VEHICLES HANDLER START ===');
+        console.log('Platform:', Platform.OS);
+        console.log('Handler called with params:', JSON.stringify(params, null, 2));
+        console.log('Auth token present:', !!authToken);
+        
+        showDebugAlert('Vehicles Handler', `Platform: ${Platform.OS}\nParams: ${Object.keys(params).join(', ')}\nToken: ${!!authToken ? 'YES' : 'NO'}`);
+        
+        // Handle vehicle data from Universal Link - SMART VERSION  
         // Support both vehicleData (legacy base64) and secureData (encrypted) parameters
         const vehicleDataParam = params.vehicleData || params.secureData;
+        console.log('Vehicle data parameter found:', !!vehicleDataParam);
+        console.log('Vehicle data param length:', vehicleDataParam?.length || 0);
+        
         if (vehicleDataParam) {
+          showDebugAlert('Vehicle Data Found', `Length: ${vehicleDataParam?.length || 0}\nType: ${params.vehicleData ? 'vehicleData' : 'secureData'}`);
+          
           try {
+            console.log('🔍 Attempting to decode vehicle data...');
             // Import secure communication utility
             const { secureCommunication } = await import('./secure-communication');
             
@@ -490,30 +721,42 @@ export class DeepLinkManager {
             const decodedVehicleData = secureCommunication.smartExtractVehicleData(vehicleDataParam);
             
             if (!decodedVehicleData) {
-              console.error('Failed to decode vehicle data in any format');
+              console.error('❌ Failed to decode vehicle data in any format');
               console.log('Attempted to parse vehicle data parameter:', vehicleDataParam?.substring(0, 50) + '...');
-              Alert.alert('Error', 'Unable to process vehicle data from deeplink');
+              console.log('Parameter type check:', typeof vehicleDataParam);
+              showDebugAlert('Decode Failed', 'Unable to decode vehicle data from Universal Link');
+              Alert.alert('Error', 'Unable to process vehicle data from Universal Link');
               return;
             }
             
-            console.log('✅ Successfully decoded vehicle data from Universal Link/deeplink');
+            console.log('✅ Successfully decoded vehicle data from Universal Link');
             console.log('Vehicle details:', { 
               make: decodedVehicleData.make, 
               model: decodedVehicleData.model, 
-              vin: decodedVehicleData.vin?.substring(0, 8) + '...'
+              vin: decodedVehicleData.vin?.substring(0, 8) + '...',
+              vehicleId: decodedVehicleData.vehicleId,
+              licensePlate: decodedVehicleData.licensePlate
             });
             
+            showDebugAlert('Decode Success', `${decodedVehicleData.make} ${decodedVehicleData.model}\nVIN: ${decodedVehicleData.vin?.substring(0, 8)}...\nPlate: ${decodedVehicleData.licensePlate}`);
+            
             // Import the vehicles store
+            console.log('🗃️ Importing vehicles store...');
             const { useVehiclesStore } = await import('@/stores/use-vehicles-store');
             const vehiclesStore = useVehiclesStore.getState();
             
+            console.log('Current vehicles count:', vehiclesStore.vehicles.length);
+            
             // Clear all existing vehicles (single vehicle mode)
             const currentVehicles = vehiclesStore.vehicles;
+            console.log('🧹 Clearing existing vehicles:', currentVehicles.length);
             for (const vehicle of currentVehicles) {
               await vehiclesStore.removeVehicle(vehicle.id);
+              console.log('Removed vehicle:', vehicle.make, vehicle.model);
             }
             
-            // Add the new vehicle from deeplink
+            // Add the new vehicle from Universal Link
+            console.log('➕ Adding new vehicle from Universal Link...');
             const newVehicle = {
               make: decodedVehicleData.make || '',
               model: decodedVehicleData.model || '',
@@ -526,13 +769,20 @@ export class DeepLinkManager {
               policyNumber: decodedVehicleData.policyNumber || ''
             };
             
+            console.log('Vehicle to add:', JSON.stringify(newVehicle, null, 2));
             await vehiclesStore.addVehicle(newVehicle);
+            console.log('✅ Vehicle added successfully');
             
             // Get the newly created vehicle to get the actual ID
             const updatedVehicles = vehiclesStore.vehicles;
             const addedVehicle = updatedVehicles[updatedVehicles.length - 1];
+            console.log('Added vehicle ID:', addedVehicle?.id);
+            console.log('Total vehicles after add:', updatedVehicles.length);
             
-            // Set deeplink context for vehicle restriction
+            showDebugAlert('Vehicle Added', `Added: ${addedVehicle?.make} ${addedVehicle?.model}\nID: ${addedVehicle?.id?.substring(0, 8)}...\nTotal vehicles: ${updatedVehicles.length}`);
+            
+            // Set Universal Link context for vehicle restriction
+            console.log('🔒 Setting Universal Link context...');
             const { useUserStore } = await import('@/stores/use-user-store');
             const userStore = useUserStore.getState();
             
@@ -543,22 +793,43 @@ export class DeepLinkManager {
               vehicleData: decodedVehicleData
             };
             
-            userStore.setDeeplinkContext(contextData);
+            userStore.setUniversalLinkContext(contextData);
+            console.log('Universal Link context set:', JSON.stringify(contextData, null, 2));
             
-            console.log('Vehicle added from deeplink:', decodedVehicleData.make, decodedVehicleData.model);
-            console.log('Deeplink context set:', contextData);
-            console.log('Added vehicle ID:', addedVehicle?.id);
-          } catch (error) {
-            console.error('Error processing vehicle data from deeplink:', error);
-            Alert.alert('Error', 'Invalid vehicle data in link');
+            showDebugAlert('Context Set', `Restriction: YES\nAllowed ID: ${addedVehicle?.id?.substring(0, 8)}...\nVehicle data preserved`);
+            
+            console.log('✅ Vehicle processing completed successfully');
+            console.log('🚗 === VEHICLES HANDLER END ===');
+            
+          } catch (error: any) {
+            console.error('❌ Error in vehicles handler:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            showDebugAlert('Handler Error', `${error?.message || 'Unknown error'}\n\nCheck debug component for details`);
+            Alert.alert('Error', `Failed to process vehicle data: ${error?.message || 'Unknown error'}`);
+            return;
           }
+        } else {
+          console.log('ℹ️ No vehicle data parameter found, showing regular vehicles screen');
+          showDebugAlert('No Vehicle Data', 'No vehicleData or secureData parameter found in URL');
         }
         
         // Navigate to vehicles page
         if (authToken) {
           console.log('Accessing vehicles with authenticated token for user:', authToken.userId);
         }
-        router.push('/(main)/vehicles');
+        
+        console.log('🚀 Navigating to vehicles...');
+        UniversalLinkManager.addDebugEvent('NAVIGATION_ATTEMPT', { route: 'vehicles', hasAuth: !!authToken });
+        
+        // Add delay to ensure Root Layout is fully mounted
+        console.log('⏳ Preparing to navigate to vehicles...');
+        this.safeNavigate('/vehicles').catch((error) => {
+          console.error('❌ Vehicles navigation failed completely:', error);
+          // Try absolute path as final fallback
+          this.safeNavigate('/(main)/vehicles').catch((finalError) => {
+            console.error('❌ All vehicles navigation attempts failed:', finalError);
+          });
+        });
       },
       requiresAuth: false, // Allow access with token auth even without login
       allowsTokenAuth: true,
@@ -567,7 +838,7 @@ export class DeepLinkManager {
 
     // Vehicle Details
     this.registerHandler('vehicle', {
-      pattern: 'porscheeclaims://vehicle/:id',
+pattern: 'https://*/vehicle/:id',
       handler: (params) => {
         if (params.action === 'add') {
           router.push('/(main)/vehicles/add');
@@ -583,15 +854,26 @@ export class DeepLinkManager {
 
     // Add Vehicle
     this.registerHandler('add-vehicle', {
-      pattern: 'porscheeclaims://add-vehicle',
-      handler: () => router.push('/(main)/vehicles/add'),
+pattern: 'https://*/add-vehicle',
+      handler: () => {
+        const targetRoute = '/(main)/vehicles/add';
+        console.log('🚀 Navigating to add vehicle route:', targetRoute);
+        try {
+          router.push(targetRoute);
+          console.log('✅ Navigation successful to:', targetRoute);
+        } catch (error) {
+          console.error('❌ Add vehicle navigation failed:', error);
+          // Try fallback
+          router.push('/vehicles/add');
+        }
+      },
       requiresAuth: true,
       description: 'Add a new vehicle'
     });
 
     // Damage Assessment
     this.registerHandler('damage', {
-      pattern: 'porscheeclaims://damage',
+pattern: 'https://*/damage',
       handler: async (params) => {
         // If we have a specific vehicle ID, ensure it's selected for damage assessment
         if (params.vehicleId) {
@@ -607,8 +889,8 @@ export class DeepLinkManager {
             if (vehicle) {
               vehiclesStore.selectVehicle(vehicle);
               
-              // Set deeplink context to indicate vehicle restriction
-              userStore.setDeeplinkContext({
+              // Set Universal Link context to indicate vehicle restriction
+              userStore.setUniversalLinkContext({
                 hasVehicleRestriction: true,
                 allowedVehicleId: params.vehicleId,
                 originalUrl: params.originalUrl || '',
@@ -630,7 +912,7 @@ export class DeepLinkManager {
 
     // Camera
     this.registerHandler('camera', {
-      pattern: 'porscheeclaims://camera/:type',
+pattern: 'https://*/camera/:type',
       handler: (params) => {
         const { type, returnTo } = params;
         const cameraParams = new URLSearchParams();
@@ -645,7 +927,7 @@ export class DeepLinkManager {
 
     // Emergency
     this.registerHandler('emergency', {
-      pattern: 'porscheeclaims://emergency',
+pattern: 'https://*/emergency',
       handler: () => router.push('/(main)/emergency'),
       requiresAuth: false, // Emergency should be accessible without auth
       description: 'Access emergency contacts'
@@ -653,7 +935,7 @@ export class DeepLinkManager {
 
     // Settings
     this.registerHandler('settings', {
-      pattern: 'porscheeclaims://settings',
+pattern: 'https://*/settings',
       handler: () => router.push('/(main)/settings'),
       requiresAuth: true,
       description: 'Open app settings'
@@ -661,15 +943,15 @@ export class DeepLinkManager {
 
     // Login
     this.registerHandler('login', {
-      pattern: 'porscheeclaims://login',
+pattern: 'https://*/login',
       handler: () => router.replace('/(auth)/login'),
       requiresAuth: false,
       description: 'Navigate to login screen'
     });
   }
 
-  // Handle deeplinks that require authentication
-  private handleAuthRequiredDeepLink(url: string) {
+  // Handle Universal Links that require authentication
+  private handleAuthRequiredUniversalLink(url: string) {
     Alert.alert(
       'Login Required',
       'Please log in to access this feature.',
@@ -678,8 +960,8 @@ export class DeepLinkManager {
         {
           text: 'Login',
           onPress: () => {
-            // Store the pending deeplink to handle after login
-            this.storePendingDeepLink(url);
+            // Store the pending Universal Link to handle after login
+            this.storePendingUniversalLink(url);
             router.replace('/(auth)/login');
           }
         }
@@ -687,26 +969,15 @@ export class DeepLinkManager {
     );
   }
 
-  // Store deeplink to handle after authentication
-  private storePendingDeepLink(url: string) {
+  // Store Universal Link to handle after authentication
+  private storePendingUniversalLink(url: string) {
     // You could use AsyncStorage here to persist across app restarts
     // For now, we'll use a simple property
     this.pendingDeepLink = url;
   }
 
-  private pendingDeepLink: string | null = null;
-
-  // Handle pending deeplink after authentication
-  handlePendingDeepLink() {
-    if (this.pendingDeepLink) {
-      const url = this.pendingDeepLink;
-      this.pendingDeepLink = null;
-      setTimeout(() => this.handleDeepLink({ url }), 500);
-    }
-  }
-
   // Show error for invalid deeplinks
-  private showDeepLinkError(message: string) {
+  private showUniversalLinkError(message: string) {
     Alert.alert(
       'Invalid Link',
       message,
@@ -714,28 +985,6 @@ export class DeepLinkManager {
         { text: 'OK', onPress: () => router.push('/') }
       ]
     );
-  }
-
-  // Generate deeplinks for sharing
-  static generateDeepLink(action: string, params?: Record<string, string>, authToken?: string): string {
-    let url = `${ENV_CONFIG.APP_SCHEME}://${action}`;
-    
-    if (params) {
-      const paramPairs = Object.entries(params)
-        .map(([key, value]) => `${key}/${encodeURIComponent(value)}`)
-        .join('/');
-      
-      if (paramPairs) {
-        url += `/${paramPairs}`;
-      }
-    }
-    
-    // Add authentication token as query parameter
-    if (authToken) {
-      url += `?token=${encodeURIComponent(authToken)}`;
-    }
-    
-    return url;
   }
 
   // Generate universal links for sharing
@@ -781,7 +1030,7 @@ export class DeepLinkManager {
       authToken = btoa(JSON.stringify(tokenPayload));
     }
     
-    return this.generateDeepLink(action, params, authToken);
+    return this.generateUniversalLink(action, params, authToken);
   }
 
   // Generate secure universal link with temporary token
@@ -809,14 +1058,30 @@ export class DeepLinkManager {
   }
 
   // Get all registered handlers (for debugging)
-  getRegisteredHandlers(): DeepLinkHandler[] {
+  getRegisteredHandlers(): UniversalLinkHandler[] {
     return Array.from(this.handlers.values());
+  }
+
+  // Handle pending deeplink after authentication
+  handlePendingDeepLink() {
+    if (this.pendingDeepLink && this.isAuthenticated) {
+      console.log('🔄 Processing pending deeplink after authentication');
+      this.handleUniversalLink({ url: this.pendingDeepLink });
+      this.pendingDeepLink = undefined;
+    }
+  }
+
+  // Generate deeplink (alias for generateUniversalLink)
+  static generateDeepLink(action: string, params?: Record<string, string>, authToken?: string): string {
+    return this.generateUniversalLink(action, params, authToken);
   }
 }
 
-// Export singleton instance
-export const deepLinkManager = DeepLinkManager.getInstance();
+// Export singleton instance and initialize immediately
+export const universalLinkManager = UniversalLinkManager.getInstance();
+// Initialize the manager immediately when module loads
+universalLinkManager.initialize();
+export const deepLinkManager = universalLinkManager;
 
 // Export helper functions
-export const generateDeepLink = DeepLinkManager.generateDeepLink;
-export const generateUniversalLink = DeepLinkManager.generateUniversalLink;
+export const generateUniversalLink = UniversalLinkManager.generateUniversalLink;

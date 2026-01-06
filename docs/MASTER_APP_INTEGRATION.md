@@ -33,7 +33,7 @@ Updated authentication hook:
 - `loginWithExternalToken()`: Master app token authentication
 - `tokenValid`: Real-time token validity status
 - Automatic token refresh monitoring
-- Deeplink authentication integration
+- Universal Link authentication integration
 
 #### 4. Enhanced API Layer (`utils/api/base.ts`, `utils/api/auth.ts`)
 Backend communication with token support:
@@ -42,11 +42,11 @@ Backend communication with token support:
 - Token validation endpoints
 - Token refresh capabilities
 
-## Deeplink Protocols
+## Universal Link Protocols
 
-### Authentication Deeplinks
+### Authentication Universal Links
 ```
-porscheeclaims://master-auth?token=<JWT_TOKEN>&userInfo=<BASE64_USER_DATA>
+https://eclaims.deactech.com/master-auth?token=<JWT_TOKEN>&userInfo=<BASE64_USER_DATA>
 ```
 **Purpose**: Receive authentication from master app
 **Parameters**:
@@ -54,18 +54,18 @@ porscheeclaims://master-auth?token=<JWT_TOKEN>&userInfo=<BASE64_USER_DATA>
 - `userInfo`: Base64 encoded user information (optional)
 - `sessionId`: Master app session identifier (optional)
 
-### Token Refresh Deeplinks
+### Token Refresh Universal Links
 ```
-porscheeclaims://token-refresh?token=<NEW_TOKEN>&userInfo=<USER_DATA>
+https://eclaims.deactech.com/token-refresh?token=<NEW_TOKEN>&userInfo=<USER_DATA>
 ```
 **Purpose**: Receive refreshed tokens from master app
 **Parameters**:
 - `token`: New authentication token
 - `userInfo`: Updated user information (optional)
 
-### Session Sync Deeplinks
+### Session Sync Universal Links
 ```
-porscheeclaims://session-sync
+https://eclaims.deactech.com/session-sync
 ```
 **Purpose**: Synchronize session state with master app
 **Response**: Returns current session data to master app
@@ -123,20 +123,18 @@ await Linking.openURL(url);
 ### App Configuration (`app.json`)
 ```json
 {
-  \"expo\": {
-    \"scheme\": \"porscheeclaims\",
-    \"ios\": {
-      \"associatedDomains\": [\"applinks:eclaims.deactech.com\"]
+  "expo": {
+    "ios": {
+      "associatedDomains": ["applinks:eclaims.deactech.com"]
     },
-    \"android\": {
-      \"intentFilters\": [
+    "android": {
+      "intentFilters": [
         {
-          \"action\": \"VIEW\",
-          \"data\": [
-            { \"scheme\": \"porscheeclaims\" },
-            { \"scheme\": \"https\", \"host\": \"eclaims.deactech.com\" }
+          "action": "VIEW",
+          "data": [
+            { "scheme": "https", "host": "eclaims.deactech.com" }
           ],
-          \"category\": [\"BROWSABLE\", \"DEFAULT\"]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     }
@@ -163,7 +161,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 const { loginWithExternalToken } = useAuth();
 
-// In deeplink handler
+// In Universal Link handler
 const result = await loginWithExternalToken(token, userInfo);
 if (result.success) {
   console.log('Authenticated via master app');

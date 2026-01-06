@@ -1,8 +1,8 @@
 import { useUserStore } from '@/stores/use-user-store';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
-import { createSecureDeepLink, createSecureUniversalLink } from './auth-token';
-import { generateDeepLink, generateUniversalLink } from './deeplink';
+import { createSecureUniversalLink } from './auth-token';
+import { generateUniversalLink } from './deeplink';
 
 export interface ShareableContent {
   title: string;
@@ -31,7 +31,6 @@ export class SecureShareManager {
   ) {
     const params = { statementId, mode };
     
-    let deepLink: string;
     let universalLink: string;
     
     if (options?.requireAuth) {
@@ -41,10 +40,8 @@ export class SecureShareManager {
         return false;
       }
       
-      deepLink = createSecureDeepLink('statement', userId, params, options);
       universalLink = createSecureUniversalLink('statement', userId, params, options);
     } else {
-      deepLink = generateDeepLink('statement', params);
       universalLink = generateUniversalLink('statement', params);
     }
     
@@ -67,7 +64,6 @@ export class SecureShareManager {
   ) {
     const params = { vehicleId, action };
     
-    let deepLink: string;
     let universalLink: string;
     
     if (options?.requireAuth) {
@@ -77,10 +73,8 @@ export class SecureShareManager {
         return false;
       }
       
-      deepLink = createSecureDeepLink('vehicle', userId, params, options);
       universalLink = createSecureUniversalLink('vehicle', userId, params, options);
     } else {
-      deepLink = generateDeepLink('vehicle', params);
       universalLink = generateUniversalLink('vehicle', params);
     }
     

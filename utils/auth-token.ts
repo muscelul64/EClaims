@@ -1,5 +1,5 @@
-import { deepLinkManager, type AuthToken, DeepLinkManager } from './deeplink';
 import { useUserStore, type User } from '@/stores/use-user-store';
+import { universalLinkManager as deepLinkManager, UniversalLinkManager as DeepLinkManager, type AuthToken } from './deeplink';
 
 /**
  * Authentication Token Utility

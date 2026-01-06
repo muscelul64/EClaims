@@ -7,14 +7,14 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { IconSymbol } from './ui/icon-symbol';
 
-export function DeeplinkRestrictionBanner() {
+export function UniversalLinkRestrictionBanner() {
   const { user } = useUserStore();
   const { t } = useTranslation();
   const borderColor = useThemeColor({ light: '#ffd60a', dark: '#ffc107' }, 'tint');
   const backgroundColor = useThemeColor({ light: '#fff3cd', dark: '#664d03' }, 'background');
   const textColor = useThemeColor({ light: '#664d03', dark: '#fff3cd' }, 'text');
 
-  if (!user.deeplinkContext?.hasVehicleRestriction) {
+  if (!user.universalLinkContext?.hasVehicleRestriction) {
     return null;
   }
 

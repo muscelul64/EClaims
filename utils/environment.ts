@@ -22,7 +22,6 @@ export const CONFIG = {
   development: {
     API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL_DEV || 'https://api-dev.eclaims.deactech.com',
     MASTER_APP_SCHEME: process.env.EXPO_PUBLIC_MASTER_APP_SCHEME_DEV || 'porsche-master-app-dev',
-    APP_SCHEME: process.env.EXPO_PUBLIC_APP_SCHEME_DEV || 'porscheeclaims-dev',
     UNIVERSAL_LINK_HOST: process.env.EXPO_PUBLIC_UNIVERSAL_LINK_HOST_DEV || 'dev-eclaims.deactech.com',
     ENABLE_LOGGING: process.env.EXPO_PUBLIC_ENABLE_CONSOLE_LOGGING !== 'false',
     DEBUG_MODE: process.env.EXPO_PUBLIC_ENABLE_DEVELOPER_MENU !== 'false',
@@ -31,7 +30,6 @@ export const CONFIG = {
   staging: {
     API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL_STAGING || 'https://api-staging.eclaims.deactech.com',
     MASTER_APP_SCHEME: process.env.EXPO_PUBLIC_MASTER_APP_SCHEME_STAGING || 'porsche-master-app-staging',
-    APP_SCHEME: process.env.EXPO_PUBLIC_APP_SCHEME_STAGING || 'porscheeclaims-staging',
     UNIVERSAL_LINK_HOST: process.env.EXPO_PUBLIC_UNIVERSAL_LINK_HOST_STAGING || 'staging-eclaims.deactech.com',
     ENABLE_LOGGING: process.env.EXPO_PUBLIC_ENABLE_CONSOLE_LOGGING === 'true',
     DEBUG_MODE: false,
@@ -40,7 +38,6 @@ export const CONFIG = {
   production: {
     API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL_PROD || 'https://api.eclaims.deactech.com',
     MASTER_APP_SCHEME: process.env.EXPO_PUBLIC_MASTER_APP_SCHEME_PROD || 'porsche-master-app',
-    APP_SCHEME: process.env.EXPO_PUBLIC_APP_SCHEME_PROD || 'porscheeclaims',
     UNIVERSAL_LINK_HOST: process.env.EXPO_PUBLIC_UNIVERSAL_LINK_HOST_PROD || 'eclaims.deactech.com',
     ENABLE_LOGGING: false,
     DEBUG_MODE: false,

@@ -1,10 +1,11 @@
 import { Picker } from '@react-native-picker/picker';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { Vehicle, useVehiclesStore } from '@/stores/use-vehicles-store';
 
 interface VehicleFormProps {
@@ -26,6 +27,10 @@ const YEARS = Array.from({ length: 50 }, (_, i) => CURRENT_YEAR - i);
 export function VehicleForm({ vehicle, onSuccess, onCancel }: VehicleFormProps) {
   const { addVehicle, updateVehicle } = useVehiclesStore();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Theme colors for picker
+  const pickerBg = useThemeColor({ light: '#fff', dark: '#2c2c2c' }, 'background');
+  const pickerBorder = useThemeColor({ light: '#ddd', dark: '#555' }, 'icon');
   
   const [formData, setFormData] = useState({
     make: vehicle?.make || '',
@@ -94,7 +99,7 @@ export function VehicleForm({ vehicle, onSuccess, onCancel }: VehicleFormProps) 
         
         <ThemedView style={styles.fieldGroup}>
           <ThemedText style={styles.label}>Make *</ThemedText>
-          <TextInput
+          <ThemedTextInput
             style={styles.input}
             value={formData.make}
             onChangeText={(text) => updateField('make', text)}
@@ -105,7 +110,7 @@ export function VehicleForm({ vehicle, onSuccess, onCancel }: VehicleFormProps) 
         
         <ThemedView style={styles.fieldGroup}>
           <ThemedText style={styles.label}>Model *</ThemedText>
-          <TextInput
+          <ThemedTextInput
             style={styles.input}
             value={formData.model}
             onChangeText={(text) => updateField('model', text)}
@@ -235,17 +240,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
   },
   picker: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    backgroundColor: '#fff',
   },
   buttonContainer: {
     flexDirection: 'row',

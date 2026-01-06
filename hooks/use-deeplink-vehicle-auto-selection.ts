@@ -3,10 +3,10 @@ import { useVehiclesStore } from '@/stores/use-vehicles-store';
 import { useEffect } from 'react';
 
 /**
- * Custom hook for auto-selecting vehicles from deeplink context
- * This should be used in any screen that might be accessed via deeplink and needs vehicle selection
+ * Custom hook for auto-selecting vehicles from Universal Link context
+ * This should be used in any screen that might be accessed via Universal Link and needs vehicle selection
  */
-export function useDeeplinkVehicleAutoSelection(options?: {
+export function useUniversalLinkVehicleAutoSelection(options?: {
   enableDebugLogs?: boolean;
   screenName?: string;
 }) {
@@ -20,13 +20,13 @@ export function useDeeplinkVehicleAutoSelection(options?: {
     loadVehicles();
   }, [loadVehicles]);
 
-  // Auto-select vehicle from deeplink context if available
+  // Auto-select vehicle from Universal Link context if available
   useEffect(() => {
-    const deeplinkContext = user.deeplinkContext;
+    const universalLinkContext = user.universalLinkContext;
     
     if (enableDebugLogs) {
       console.log(`=== ${screenName} Vehicle Auto-Selection Debug ===`);
-      console.log('Deeplink context:', JSON.stringify(deeplinkContext, null, 2));
+      console.log('Universal Link context:', JSON.stringify(universalLinkContext, null, 2));
       console.log('Current selected vehicle:', selectedVehicle ? {
         id: selectedVehicle.id,
         make: selectedVehicle.make,
@@ -48,25 +48,25 @@ export function useDeeplinkVehicleAutoSelection(options?: {
         console.log('Attempting vehicle selection...');
       }
       
-      if (!deeplinkContext) {
+      if (!universalLinkContext) {
         if (enableDebugLogs) {
-          console.log('No deeplink context found');
+          console.log('No Universal Link context found');
         }
         return false;
       }
       
       // Check if we have any form of vehicle restriction/data
-      const hasVehicleFromDeeplink = deeplinkContext.hasVehicleRestriction || 
-                                    deeplinkContext.allowedVehicleId || 
-                                    deeplinkContext.vehicleData;
+      const hasVehicleFromUniversalLink = universalLinkContext.hasVehicleRestriction || 
+                                    universalLinkContext.allowedVehicleId || 
+                                    universalLinkContext.vehicleData;
       
       if (enableDebugLogs) {
-        console.log('Has vehicle from deeplink?', hasVehicleFromDeeplink);
+        console.log('Has vehicle from Universal Link?', hasVehicleFromUniversalLink);
       }
       
-      if (!hasVehicleFromDeeplink) {
+      if (!hasVehicleFromUniversalLink) {
         if (enableDebugLogs) {
-          console.log('No vehicle data in deeplink context');
+          console.log('No vehicle data in Universal Link context');
         }
         return false;
       }
@@ -83,34 +83,34 @@ export function useDeeplinkVehicleAutoSelection(options?: {
       }
       
       // Try to find by allowedVehicleId first
-      if (deeplinkContext.allowedVehicleId) {
+      if (universalLinkContext.allowedVehicleId) {
         if (enableDebugLogs) {
-          console.log('Looking for vehicle with ID:', deeplinkContext.allowedVehicleId);
+          console.log('Looking for vehicle with ID:', universalLinkContext.allowedVehicleId);
         }
-        const deeplinkVehicle = filteredVehicles.find(v => v.id === deeplinkContext.allowedVehicleId);
+        const universalLinkVehicle = filteredVehicles.find(v => v.id === universalLinkContext.allowedVehicleId);
         
-        if (deeplinkVehicle) {
+        if (universalLinkVehicle) {
           if (enableDebugLogs) {
-            console.log('✅ Found vehicle by ID - auto-selecting:', deeplinkVehicle.make, deeplinkVehicle.model);
+            console.log('✅ Found vehicle by ID - auto-selecting:', universalLinkVehicle.make, universalLinkVehicle.model);
           }
-          selectVehicle(deeplinkVehicle);
+          selectVehicle(universalLinkVehicle);
           return true;
         } else if (enableDebugLogs) {
-          console.warn('❌ Vehicle not found by allowedVehicleId:', deeplinkContext.allowedVehicleId);
+          console.warn('❌ Vehicle not found by allowedVehicleId:', universalLinkContext.allowedVehicleId);
         }
       }
       
       // Try to find by vehicle data (VIN, license plate, etc.)
-      if (deeplinkContext.vehicleData) {
+      if (universalLinkContext.vehicleData) {
         if (enableDebugLogs) {
-          console.log('Looking for vehicle by data:', deeplinkContext.vehicleData);
+          console.log('Looking for vehicle by data:', universalLinkContext.vehicleData);
         }
         
-        const vehicleByVin = deeplinkContext.vehicleData.vin ? 
-          filteredVehicles.find(v => v.vin === deeplinkContext.vehicleData.vin) : null;
+        const vehicleByVin = universalLinkContext.vehicleData.vin ? 
+          filteredVehicles.find(v => v.vin === universalLinkContext.vehicleData.vin) : null;
         
-        const vehicleByPlate = deeplinkContext.vehicleData.licensePlate ? 
-          filteredVehicles.find(v => v.licensePlate === deeplinkContext.vehicleData.licensePlate) : null;
+        const vehicleByPlate = universalLinkContext.vehicleData.licensePlate ? 
+          filteredVehicles.find(v => v.licensePlate === universalLinkContext.vehicleData.licensePlate) : null;
         
         const matchedVehicle = vehicleByVin || vehicleByPlate;
         
@@ -151,8 +151,8 @@ export function useDeeplinkVehicleAutoSelection(options?: {
       return;
     }
     
-    // If immediate selection failed and we have deeplink context, try again after a brief delay
-    if (deeplinkContext && (deeplinkContext.hasVehicleRestriction || deeplinkContext.allowedVehicleId || deeplinkContext.vehicleData)) {
+    // If immediate selection failed and we have Universal Link context, try again after a brief delay
+    if (universalLinkContext && (universalLinkContext.hasVehicleRestriction || universalLinkContext.allowedVehicleId || universalLinkContext.vehicleData)) {
       if (enableDebugLogs) {
         console.log('⏱️ Setting up retry timeout...');
       }
@@ -186,5 +186,5 @@ export function useDeeplinkVehicleAutoSelection(options?: {
       console.log('❌ No valid conditions for auto-selection');
       console.log(`=== End ${screenName} Auto-Selection Debug ===`);
     }
-  }, [user.deeplinkContext, selectedVehicle, selectVehicle, getFilteredVehicles, enableDebugLogs, screenName]);
+  }, [user.universalLinkContext, selectedVehicle, selectVehicle, getFilteredVehicles, enableDebugLogs, screenName]);
 }

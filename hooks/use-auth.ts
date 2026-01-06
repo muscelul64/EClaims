@@ -1,5 +1,5 @@
 import { useUserStore, type User } from '@/stores/use-user-store';
-import { deepLinkManager, type AuthToken } from '@/utils/deeplink';
+import { universalLinkManager as deepLinkManager, type AuthToken } from '@/utils/deeplink';
 import { useEffect } from 'react';
 
 export function useAuth() {

@@ -8,9 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCameraStore } from '@/stores/use-camera-store';
 //import { useUserStore } from '@/stores/use-user-store';
+import { useUniversalLinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useVehiclesStore } from '@/stores/use-vehicles-store';
 import { useTranslation } from 'react-i18next';
-import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 
 const DamageTypeCard = ({ 
   title, 
@@ -59,7 +59,7 @@ export default function DamageAssessmentScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   
   // Use the reusable deeplink vehicle auto-selection hook
-  useDeeplinkVehicleAutoSelection({
+  useUniversalLinkVehicleAutoSelection({
     enableDebugLogs: true,
     screenName: 'Damage Assessment'
   });

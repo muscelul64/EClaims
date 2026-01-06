@@ -1,18 +1,18 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
-import { deepLinkManager, generateDeepLink, generateUniversalLink } from '@/utils/deeplink';
+import { generateUniversalLink, universalLinkManager } from '@/utils/deeplink';
 import { shareManager } from '@/utils/share';
 
 export function useDeepLink() {
-  // Navigate using deeplink action
-  const navigateByDeepLink = useCallback((action: string, params?: Record<string, string>) => {
-    const url = generateDeepLink(action, params);
-    deepLinkManager['handleDeepLink']({ url });
+  // Navigate using Universal Link action
+  const navigateByUniversalLink = useCallback((action: string, params?: Record<string, string>) => {
+    const url = generateUniversalLink(action, params);
+    universalLinkManager['handleUniversalLink']({ url });
   }, []);
   
-  // Share a deeplink
-  const shareDeepLink = useCallback(async (action: string, params?: Record<string, string>) => {
+  // Share a Universal Link
+  const shareUniversalLink = useCallback(async (action: string, params?: Record<string, string>) => {
     try {
       const url = generateUniversalLink(action, params);
       const title = getActionTitle(action);
@@ -23,7 +23,7 @@ export function useDeepLink() {
         url
       });
     } catch (error) {
-      console.error('Error sharing deeplink:', error);
+      console.error('Error sharing Universal Link:', error);
       Alert.alert('Error', 'Could not share link');
       return false;
     }
@@ -31,19 +31,19 @@ export function useDeepLink() {
   
   // Quick navigation helpers
   const quickNavigation = {
-    toHome: () => navigateByDeepLink('home'),
-    toNewStatement: () => navigateByDeepLink('new-statement'),
-    toVehicles: () => navigateByDeepLink('vehicles'),
-    toAddVehicle: () => navigateByDeepLink('add-vehicle'),
-    toDamage: () => navigateByDeepLink('damage'),
-    toEmergency: () => navigateByDeepLink('emergency'),
-    toSettings: () => navigateByDeepLink('settings'),
+    toHome: () => navigateByUniversalLink('home'),
+    toNewStatement: () => navigateByUniversalLink('new-statement'),
+    toVehicles: () => navigateByUniversalLink('vehicles'),
+    toAddVehicle: () => navigateByUniversalLink('add-vehicle'),
+    toDamage: () => navigateByUniversalLink('damage'),
+    toEmergency: () => navigateByUniversalLink('emergency'),
+    toSettings: () => navigateByUniversalLink('settings'),
     toStatement: (id: string, mode: 'view' | 'edit' | 'continue' = 'view') => 
-      navigateByDeepLink('statement', { statementId: id, mode }),
+      navigateByUniversalLink('statement', { statementId: id, mode }),
     toVehicle: (id: string, action: 'view' | 'edit' = 'view') => 
-      navigateByDeepLink('vehicle', { vehicleId: id, action }),
+      navigateByUniversalLink('vehicle', { vehicleId: id, action }),
     toCamera: (type: 'id' | 'license' | 'registration' | 'damage' | 'general', returnTo?: string) => 
-      navigateByDeepLink('camera', { type, ...(returnTo && { returnTo }) })
+      navigateByUniversalLink('camera', { type, ...(returnTo && { returnTo }) })
   };
   
   // Quick share helpers
@@ -60,15 +60,14 @@ export function useDeepLink() {
   
   // Generate links for display
   const generateLinks = {
-    deepLink: generateDeepLink,
     universalLink: generateUniversalLink,
     qrData: (action: string, params?: Record<string, string>) => 
       shareManager.generateQRData(action, params)
   };
   
   return {
-    navigateByDeepLink,
-    shareDeepLink,
+    navigateByUniversalLink,
+    shareUniversalLink,
     quickNavigation,
     quickShare,
     generateLinks

@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { secureShareManager } from '@/utils/secure-share';
-import { createSecureUniversalLink } from '@/utils/auth-token';
 import { useUserStore } from '@/stores/use-user-store';
+import { createSecureUniversalLink } from '@/utils/auth-token';
+import { secureShareManager } from '@/utils/secure-share';
+import React, { useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 
-interface AuthDeepLinkDemoProps {
+interface AuthUniversalLinkDemoProps {
   title?: string;
 }
 
 /**
- * Authentication-enabled DeepLink Demo Component
- * Shows how to integrate secure deeplinks with authentication tokens
+ * Authentication-enabled Universal Link Demo Component
+ * Shows how to integrate secure Universal Links with authentication tokens
  */
-export function AuthDeepLinkDemo({ title = "Secure Sharing Demo" }: AuthDeepLinkDemoProps) {
+export function AuthUniversalLinkDemo({ title = "Secure Sharing Demo" }: AuthUniversalLinkDemoProps) {
   const { user } = useUserStore();
   const [isSharing, setIsSharing] = useState(false);
   

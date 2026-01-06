@@ -11,14 +11,14 @@
   - Android: `com.deactech.porscheeclaims`
 - Environment-aware configuration detection
 
-**2. Deeplink System Updates**
+**2. Universal Link System Updates**
 - Production schemes: `porscheeclaims://`
 - Universal links: `https://eclaims.deactech.com/`
 - Legacy scheme: `deactecheclaims://` (for backward compatibility)
 - Single vehicle restriction support
 
 **3. Enhanced Integration Features**
-- Single vehicle deeplink authentication
+- Universal Link authentication
 - Vehicle restriction handling
 - Production environment detection
 - Improved security configuration
@@ -35,7 +35,7 @@
 - `KotlinImplementationExample.kt` - Updated with production config
 - New method: `launchEClaimsWithVehicle(vehicleId, authToken)`
 - Production API endpoints
-- Deeplink URL handling
+- Universal Link URL handling
 - Vehicle restriction support
 
 **iOS (Swift 5):**
@@ -51,21 +51,21 @@
 ```kotlin
 // Launch with specific vehicle restriction
 fun launchEClaimsWithVehicle(vehicleId: String, authToken: String) {
-    val deeplinkConfig = mapOf(
+    val universalLinkConfig = mapOf(
         "allowedVehicleId" to vehicleId,
         "hasVehicleRestriction" to true,
-        "originalUrl" to "porscheeclaims://vehicles/$vehicleId?token=$authToken"
+        "originalUrl" to "https://eclaims.deactech.com/vehicles/$vehicleId?token=$authToken"
     )
-    eClaimsModule.setDeeplinkContext(gson.toJson(deeplinkConfig))
+    eClaimsModule.setUniversalLinkContext(gson.toJson(universalLinkConfig))
     eClaimsModule.authenticateWithToken(authToken)
 }
 
-// Handle deeplinks in running app
+// Handle Universal Links in running app
 override fun onNewIntent(intent: Intent?) {
     super.onNewIntent(intent)
     intent?.data?.let { uri ->
-        if (uri.toString().startsWith("porscheeclaims://")) {
-            eClaimsModule.handleDeeplink(uri.toString())
+        if (uri.toString().startsWith("https://eclaims.deactech.com/")) {
+            eClaimsModule.handleUniversalLink(uri.toString())
         }
     }
 }
@@ -75,30 +75,30 @@ override fun onNewIntent(intent: Intent?) {
 ```swift
 // Launch with specific vehicle restriction
 func launchEClaimsWithVehicle(vehicleId: String, authToken: String) {
-    let deeplinkConfig: [String: Any] = [
+    let universalLinkConfig: [String: Any] = [
         "allowedVehicleId": vehicleId,
         "hasVehicleRestriction": true,
-        "originalUrl": "porscheeclaims://vehicles/\(vehicleId)?token=\(authToken)"
+        "originalUrl": "https://eclaims.deactech.com/vehicles/\(vehicleId)?token=\(authToken)"
     ]
-    eClaimsModule?.setDeeplinkContext(convertToJSON(deeplinkConfig))
+    eClaimsModule?.setUniversalLinkContext(convertToJSON(universalLinkConfig))
     eClaimsModule?.authenticateWithToken(authToken)
 }
 
-// Handle deeplinks
-func handleDeeplink(url: URL) {
+// Handle Universal Links
+func handleUniversalLink(url: URL) {
     let urlString = url.absoluteString
-    if urlString.hasPrefix("porscheeclaims://") {
-        eClaimsModule?.handleDeeplink(urlString)
+    if urlString.hasPrefix("https://eclaims.deactech.com/") {
+        eClaimsModule?.handleUniversalLink(urlString)
     }
 }
 ```
 
 ### 🌐 **Production URLs & Configuration**
 
-**Deeplink Examples:**
-- Basic vehicle access: `porscheeclaims://vehicles`
-- Single vehicle with auth: `porscheeclaims://vehicles/vehicle123?token=xxx`
-- Universal link: `https://eclaims.deactech.com/vehicles/vehicle123?token=xxx`
+**Universal Link Examples:**
+- Basic vehicle access: `https://eclaims.deactech.com/vehicles`
+- Single vehicle with auth: `https://eclaims.deactech.com/vehicles/vehicle123?token=xxx`
+- Universal link with context: `https://eclaims.deactech.com/vehicles/vehicle123?token=xxx&vehicleData=xxx`
 
 **Environment Detection:**
 - Automatic environment detection based on build configuration
@@ -110,14 +110,7 @@ func handleDeeplink(url: URL) {
 
 **Android Manifest Updates:**
 ```xml
-<!-- Deeplink intent filters -->
-<intent-filter android:autoVerify="true">
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="porscheeclaims" />
-</intent-filter>
-
+<!-- Universal Link intent filters -->
 <intent-filter android:autoVerify="true">
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
@@ -128,20 +121,7 @@ func handleDeeplink(url: URL) {
 
 **iOS Info.plist Updates:**
 ```xml
-<!-- URL Schemes -->
-<key>CFBundleURLTypes</key>
-<array>
-    <dict>
-        <key>CFBundleURLName</key>
-        <string>com.porsche.eclaims</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>porscheeclaims</string>
-        </array>
-    </dict>
-</array>
-
-<!-- Universal Links -->
+<!-- Universal Links only -->
 <key>com.apple.developer.associated-domains</key>
 <array>
     <string>applinks:eclaims.deactech.com</string>
@@ -154,7 +134,7 @@ func handleDeeplink(url: URL) {
 - [x] Production API endpoints configured
 - [x] Bundle identifiers updated
 - [x] Environment detection implemented
-- [x] Deeplink schemes configured
+- [x] Universal Link schemes configured
 
 ✅ **Features Enhanced**
 - [x] Single vehicle restriction support
@@ -168,4 +148,4 @@ func handleDeeplink(url: URL) {
 - [x] Configuration examples provided
 - [x] Security considerations documented
 
-The integration documentation is now fully updated for production environment deployment with the latest deeplink features and single vehicle restriction capabilities.
+The integration documentation is now fully updated for production environment deployment with the latest Universal Link features and single vehicle restriction capabilities.

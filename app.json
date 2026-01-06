@@ -2,45 +2,19 @@
   "expo": {
     "name": "Porsche E-Claims",
     "slug": "porsche-eclaims",
-    "version": "1.0.32",
+    "version": "1.0.35",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "porscheeclaims",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "intentFilters": [
-      {
-        "action": "VIEW",
-        "data": [
-          {
-            "scheme": "porscheeclaims"
-          },
-          {
-            "scheme": "https",
-            "host": "eclaims.deactech.com"
-          },
-          {
-            "scheme": "https",
-            "host": "staging-eclaims.deactech.com"
-          },
-          {
-            "scheme": "https",
-            "host": "dev-eclaims.deactech.com"
-          }
-        ],
-        "category": [
-          "BROWSABLE",
-          "DEFAULT"
-        ]
-      }
-    ],
+    "scheme": "porscheeclaims",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.deactech.porscheeclaims",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "37",
+      "buildNumber": "43",
       "associatedDomains": [
         "applinks:eclaims.deactech.com",
         "applinks:staging-eclaims.deactech.com",
@@ -67,19 +41,13 @@
         "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "package": "com.deactech.porscheeclaims",
-      "versionCode": 32,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "minSdkVersion": 23,
+      "versionCode": 44,
       "allowBackup": false,
-      "networkSecurityConfig": "network_security_config",
       "intentFilters": [
         {
           "action": "VIEW",
+          "autoVerify": true,
           "data": [
-            {
-              "scheme": "porscheeclaims"
-            },
             {
               "scheme": "https",
               "host": "eclaims.deactech.com"

@@ -22,11 +22,12 @@ export function ThemedButton({
   ...rest
 }: ThemedButtonProps) {
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'tint');
+  const secondaryBg = useThemeColor({ light: '#f0f0f0', dark: '#333333' }, 'background');
   
   const getButtonStyle = () => {
     switch (variant) {
       case 'secondary':
-        return { backgroundColor: '#f0f0f0' };
+        return { backgroundColor: secondaryBg };
       case 'outline':
         return { backgroundColor: 'transparent', borderWidth: 1, borderColor: backgroundColor };
       default:

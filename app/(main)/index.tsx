@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/hooks/use-auth';
-import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
+import { useUniversalLinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { runSecurityTests } from '@/utils/security-test-suite';
 
@@ -51,12 +51,13 @@ const menuOptions: MenuOption[] = [
 export default function MainScreen() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { t, i18n } = useTranslation();
-  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#444' });
-  const buildCardBg = useThemeColor({ light: '#f8f9fa', dark: '#1a1a1a' });
+  const { t } = useTranslation();
+  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#444' }, 'text');
+  const buildCardBg = useThemeColor({ light: '#f8f9fa', dark: '#1a1a1a' }, 'background');
+  const securityColor = useThemeColor({ light: '#007AFF', dark: '#0A84FF' }, 'text');
   
   // Auto-select vehicle from deeplink if available (applies to all navigation from main screen)
-  useDeeplinkVehicleAutoSelection({
+  useUniversalLinkVehicleAutoSelection({
     enableDebugLogs: false,
     screenName: 'Main Screen'
   });
@@ -116,7 +117,7 @@ export default function MainScreen() {
         {/* Build Info Card */}
         <ThemedView style={[styles.buildCard, { backgroundColor: buildCardBg, borderColor }]}>
           <View style={styles.buildInfo}>
-            <IconSymbol name="gear" size={16} color={useThemeColor({ light: '#666', dark: '#999' })} />
+            <IconSymbol name="gear" size={16} color={useThemeColor({ light: '#666', dark: '#999' }, 'text')} />
             <ThemedText style={styles.buildText}>
               v{Constants.expoConfig?.version || '1.0.0'} ({Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || 'Build 1'})
             </ThemedText>
@@ -131,8 +132,8 @@ export default function MainScreen() {
           <ThemedView style={[styles.buildCard, { backgroundColor: buildCardBg, borderColor, marginTop: 10 }]}>
             <TouchableOpacity onPress={runSecurityTests} style={styles.securityTestButton}>
               <View style={styles.buildInfo}>
-                <IconSymbol name="shield.checkerboard" size={16} color={useThemeColor({ light: '#007AFF', dark: '#0A84FF' })} />
-                <ThemedText style={[styles.buildText, { color: useThemeColor({ light: '#007AFF', dark: '#0A84FF' }) }]}>
+                <IconSymbol name="shield.checkerboard" size={16} color={securityColor} />
+                <ThemedText style={[styles.buildText, { color: securityColor }]}>
                   Run Security Tests
                 </ThemedText>
               </View>

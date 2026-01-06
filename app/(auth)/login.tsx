@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, StyleSheet, TextInput } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedTextInput } from '@/components/themed-text-input';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/hooks/use-auth';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { isMasterAppAvailable, requestMasterAppAuth } from '@/utils/master-app-integration';
 
 export default function LoginScreen() {
@@ -17,6 +19,20 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
+  
+  // Theme colors for master app section
+  const masterAppBgColor = useThemeColor(
+    { light: 'rgba(0, 122, 255, 0.1)', dark: 'rgba(0, 122, 255, 0.2)' },
+    'background'
+  );
+  const masterAppBorderColor = useThemeColor(
+    { light: 'rgba(0, 122, 255, 0.2)', dark: 'rgba(0, 122, 255, 0.4)' },
+    'tint'
+  );
+  const masterAppTextColor = useThemeColor(
+    { light: '#007AFF', dark: '#409CFF' },
+    'tint'
+  );
 
   // Check if master app is available
   useEffect(() => {
@@ -54,7 +70,8 @@ export default function LoginScreen() {
     try {
       await requestMasterAppAuth('login');
       // The master app will handle the authentication and callback
-    } catch (error) {
+    } catch (err) {
+      console.error('Master app error:', err);
       Alert.alert(
         t('auth.masterAppError') || 'Master App Error',
         t('auth.masterAppNotAvailable') || 'Cannot connect to master app. Please try manual login.'
@@ -72,8 +89,17 @@ export default function LoginScreen() {
         </ThemedText>
         
         {masterAppAvailable && (
-          <ThemedView style={styles.masterAppSection}>
-            <ThemedText style={styles.masterAppText}>
+          <ThemedView style={[
+            styles.masterAppSection,
+            {
+              backgroundColor: masterAppBgColor,
+              borderColor: masterAppBorderColor,
+            }
+          ]}>
+            <ThemedText style={[
+              styles.masterAppText,
+              { color: masterAppTextColor }
+            ]}>
               {t('auth.masterAppAvailable') || 'Authenticated via Porsche Master App'}
             </ThemedText>
             <ThemedButton
@@ -88,7 +114,7 @@ export default function LoginScreen() {
           </ThemedView>
         )}
         
-        <TextInput
+        <ThemedTextInput
           style={styles.input}
           placeholder={t('auth.username') || 'Username'}
           value={username}
@@ -97,7 +123,7 @@ export default function LoginScreen() {
           autoCorrect={false}
         />
         
-        <TextInput
+        <ThemedTextInput
           style={styles.input}
           placeholder={t('auth.password') || 'Password'}
           value={password}
@@ -134,15 +160,12 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     padding: 15,
     borderRadius: 8,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 122, 255, 0.2)',
   },
   masterAppText: {
     textAlign: 'center',
     marginBottom: 15,
     fontSize: 16,
-    color: '#007AFF',
   },
   masterAppButton: {
     backgroundColor: '#007AFF',
@@ -154,14 +177,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
     marginBottom: 15,
-    fontSize: 16,
-    backgroundColor: '#fff',
   },
   loginButton: {
     marginTop: 10,

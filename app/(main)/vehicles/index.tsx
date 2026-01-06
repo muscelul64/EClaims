@@ -3,10 +3,10 @@ import React, { useEffect } from 'react';
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DeeplinkRestrictionBanner } from '@/components/deeplink-restriction-banner';
+import { UniversalLinkRestrictionBanner } from '@/components/deeplink-restriction-banner';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedText } from '@/components/themed-text';
-import { useDeeplinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
+import { useUniversalLinkVehicleAutoSelection } from '@/hooks/use-deeplink-vehicle-auto-selection';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useUserStore } from '@/stores/use-user-store';
 import { useVehiclesStore, Vehicle } from '@/stores/use-vehicles-store';
@@ -26,15 +26,15 @@ const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode, isDeleteDisa
     <TouchableOpacity onPress={onPress} style={[styles.vehicleCard, { backgroundColor: cardColor }]}>
       <View style={styles.vehicleCardContent}>
         <View style={styles.vehicleInfo}>
-          <ThemedText style={styles.vehicleTitle}>
+          <ThemedText style={[styles.vehicleTitle, { color: '#FFF' }]}>
             {vehicle.make ? `${vehicle.make} ${vehicle.model}` : t('_.incomplete')}
           </ThemedText>
           {vehicle.make && vehicle.licensePlate && (
             <>
-              <ThemedText style={styles.vehicleDetail}>• {vehicle.make}</ThemedText>
-              <ThemedText style={styles.vehicleDetail}>• {vehicle.licensePlate}</ThemedText>
+              <ThemedText style={[styles.vehicleDetail, { color: '#FFF', opacity: 0.9 }]}>• {vehicle.make}</ThemedText>
+              <ThemedText style={[styles.vehicleDetail, { color: '#FFF', opacity: 0.9 }]}>• {vehicle.licensePlate}</ThemedText>
               {vehicle.year && (
-                <ThemedText style={styles.vehicleDetail}>• {vehicle.year}</ThemedText>
+                <ThemedText style={[styles.vehicleDetail, { color: '#FFF', opacity: 0.9 }]}>• {vehicle.year}</ThemedText>
               )}
             </>
           )}
@@ -50,7 +50,7 @@ const VehicleCard = ({ vehicle, onPress, onDelete, isSelectionMode, isDeleteDisa
             </TouchableOpacity>
           )}
           {isSelectionMode && (
-            <ThemedText style={styles.selectText}>
+            <ThemedText style={[styles.selectText, { color: '#FFF' }]}>
               {t('common.select')}
             </ThemedText>
           )}
@@ -68,16 +68,19 @@ export default function MyVehiclesScreen() {
   const { user } = useUserStore();
   const backgroundColor = useThemeColor({}, 'background');
   
-  // Check if we're in a restricted deeplink context
-  const hasVehicleRestriction = user.deeplinkContext?.hasVehicleRestriction || false;
+  // Check if we're in a restricted Universal Link context
+  const hasVehicleRestriction = user.universalLinkContext?.hasVehicleRestriction || false;
   
-  // Use filtered vehicles based on deeplink context
+  // Hide Add/Remove vehicle buttons when accessed via Universal Link on both platforms
+  const shouldHideVehicleActions = user.universalLinkContext?.hasVehicleRestriction || false;
+  
+  // Use filtered vehicles based on Universal Link context
   const vehicles = getFilteredVehicles();
   const isSelectionMode = mode === 'select';
   
-  // Auto-select vehicle from deeplink if available (useful for selection mode)
-  useDeeplinkVehicleAutoSelection({
-    enableDebugLogs: false,
+  // Auto-select vehicle from Universal Link if available (useful for selection mode)
+  useUniversalLinkVehicleAutoSelection({
+    enableDebugLogs: true,
     screenName: 'My Vehicles'
   });
 
@@ -132,7 +135,7 @@ export default function MyVehiclesScreen() {
       onPress={() => handleEditVehicle(item)}
       onDelete={() => handleDeleteVehicle(item)}
       isSelectionMode={isSelectionMode}
-      isDeleteDisabled={hasVehicleRestriction}
+      isDeleteDisabled={hasVehicleRestriction || shouldHideVehicleActions}
     />
   );
 
@@ -141,7 +144,7 @@ export default function MyVehiclesScreen() {
       <ThemedText style={styles.vehicleCount}>
         {vehicles.length}/10 {t('profile.vehicles')}
       </ThemedText>
-      {!isSelectionMode && !hasVehicleRestriction && (
+      {!isSelectionMode && !hasVehicleRestriction && !shouldHideVehicleActions && (
         <ThemedButton
           title={t('vehiclesScreen.addVehicle')}
           onPress={handleAddVehicle}
@@ -180,8 +183,8 @@ export default function MyVehiclesScreen() {
         </ThemedText>
       </View>
 
-      {/* Deeplink Restriction Banner */}
-      <DeeplinkRestrictionBanner />
+      {/* Universal Link Restriction Banner */}
+      <UniversalLinkRestrictionBanner />
 
       {vehicles.length === 0 ? (
         renderEmptyState()
@@ -256,13 +259,10 @@ const styles = StyleSheet.create({
   vehicleTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFF',
     marginBottom: 4,
   },
   vehicleDetail: {
     fontSize: 12,
-    color: '#FFF',
-    opacity: 0.9,
     marginBottom: 2,
   },
   vehicleActions: {
@@ -283,7 +283,6 @@ const styles = StyleSheet.create({
   },
   selectText: {
     fontSize: 12,
-    color: '#FFF',
     fontWeight: 'bold',
     paddingHorizontal: 8,
     paddingVertical: 4,

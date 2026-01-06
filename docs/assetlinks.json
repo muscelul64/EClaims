@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.deactech.porscheeclaims",
+      "sha256_cert_fingerprints": [
+        "38:C5:ED:13:26:32:A0:BB:56:C4:97:31:44:B3:DC:64:6F:69:5A:C5:57:2F:C6:C7:12:5D:84:70:29:3C:25:75"
+      ]
+    }
+  }
+]

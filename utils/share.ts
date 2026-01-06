@@ -1,6 +1,6 @@
 import * as Sharing from 'expo-sharing';
 import { Alert, Platform } from 'react-native';
-import { generateDeepLink, generateUniversalLink } from './deeplink';
+import { generateUniversalLink } from './deeplink';
 
 export interface ShareableContent {
   title: string;
@@ -11,7 +11,6 @@ export interface ShareableContent {
 export class ShareManager {
   // Share a statement with others
   static async shareStatement(statementId: string, mode: 'view' | 'edit' = 'view') {
-    const deepLink = generateDeepLink('statement', { statementId, mode });
     const universalLink = generateUniversalLink('statement', { statementId, mode });
     
     const content: ShareableContent = {
@@ -25,7 +24,6 @@ export class ShareManager {
   
   // Share a vehicle for review/editing
   static async shareVehicle(vehicleId: string, action: 'view' | 'edit' = 'view') {
-    const deepLink = generateDeepLink('vehicle', { vehicleId, action });
     const universalLink = generateUniversalLink('vehicle', { vehicleId, action });
     
     const content: ShareableContent = {
@@ -56,7 +54,6 @@ export class ShareManager {
   
   // Share emergency contact information
   static async shareEmergencyInfo() {
-    const deepLink = generateDeepLink('emergency');
     const universalLink = generateUniversalLink('emergency');
     
     const content: ShareableContent = {
@@ -71,7 +68,6 @@ export class ShareManager {
   // Share damage assessment link
   static async shareDamageAssessment(vehicleId?: string) {
     const params = vehicleId ? { vehicleId, type: 'assess' } : undefined;
-    const deepLink = generateDeepLink('damage', params);
     const universalLink = generateUniversalLink('damage', params);
     
     const content: ShareableContent = {
@@ -133,7 +129,7 @@ export class ShareManager {
     }
   }
   
-  // Generate QR code data for a deeplink
+  // Generate QR code data for a Universal Link
   static generateQRData(action: string, params?: Record<string, string>): string {
     return generateUniversalLink(action, params);
   }
@@ -141,9 +137,9 @@ export class ShareManager {
   // Parse incoming share data
   static parseSharedUrl(url: string): { action: string; params: any } | null {
     try {
-      // This could integrate with the deeplink parser
+      // This could integrate with the Universal Link parser
       // For now, basic parsing
-      if (url.includes('eclaims.deactech.com') || url.includes('porscheeclaims://')) {
+      if (url.includes('eclaims.deactech.com')) {
         return { action: 'shared_link', params: { url } };
       }
       return null;

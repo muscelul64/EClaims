@@ -44,7 +44,7 @@ export interface User {
   username?: string;
   authToken?: string;
   tokenExpiresAt?: number;
-  deeplinkContext?: {
+  universalLinkContext?: {
     hasVehicleRestriction: boolean;
     allowedVehicleId?: string;
     originalUrl: string;
@@ -68,9 +68,9 @@ interface UserState {
   isLoading: boolean;
   setUser: (user: User) => void;
   setUserWithoutPersist: (user: User) => void;
-  setExternalAuth: (token: string, userInfo?: any, deeplinkContext?: any) => Promise<boolean>;
-  setDeeplinkContext: (context: any) => void;
-  clearDeeplinkContext: () => void;
+  setExternalAuth: (token: string, userInfo?: any, universalLinkContext?: any) => Promise<boolean>;
+  setUniversalLinkContext: (context: any) => void;
+  clearUniversalLinkContext: () => void;
   validateToken: () => boolean;
   refreshTokenIfNeeded: () => Promise<boolean>;
   logout: () => void;
@@ -132,7 +132,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  setExternalAuth: async (token: string, userInfo?: any, deeplinkContext?: any) => {
+  setExternalAuth: async (token: string, userInfo?: any, universalLinkContext?: any) => {
     try {
       // Parse token to extract user information and expiration
       const tokenData = parseAuthToken(token);
@@ -146,10 +146,10 @@ export const useUserStore = create<UserState>((set, get) => ({
         authToken: token,
         tokenExpiresAt: tokenData.expiresAt,
         username: userInfo?.username || tokenData.userId,
-        deeplinkContext: deeplinkContext ? {
-          hasVehicleRestriction: !!deeplinkContext.allowedVehicleId,
-          allowedVehicleId: deeplinkContext.allowedVehicleId,
-          originalUrl: deeplinkContext.originalUrl || '',
+        universalLinkContext: universalLinkContext ? {
+          hasVehicleRestriction: !!universalLinkContext.allowedVehicleId,
+          allowedVehicleId: universalLinkContext.allowedVehicleId,
+          originalUrl: universalLinkContext.originalUrl || '',
           timestamp: Date.now(),
         } : undefined,
         masterAppSession: {
@@ -166,8 +166,8 @@ export const useUserStore = create<UserState>((set, get) => ({
 
       await get().setUser(user);
       console.log('External authentication successful for user:', tokenData.userId);
-      if (deeplinkContext?.allowedVehicleId) {
-        console.log('Vehicle restriction applied:', deeplinkContext.allowedVehicleId);
+      if (universalLinkContext?.allowedVehicleId) {
+        console.log('Vehicle restriction applied:', universalLinkContext.allowedVehicleId);
       }
       return true;
     } catch (error) {
@@ -176,11 +176,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  setDeeplinkContext: (context: any) => {
+  setUniversalLinkContext: (context: any) => {
     set((state) => ({
       user: {
         ...state.user,
-        deeplinkContext: {
+        universalLinkContext: {
           hasVehicleRestriction: !!context.allowedVehicleId || !!context.vehicleData,
           allowedVehicleId: context.allowedVehicleId,
           originalUrl: context.originalUrl || '',
@@ -191,11 +191,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     }));
   },
 
-  clearDeeplinkContext: () => {
+  clearUniversalLinkContext: () => {
     set((state) => ({
       user: {
         ...state.user,
-        deeplinkContext: undefined
+        universalLinkContext: undefined
       }
     }));
   },

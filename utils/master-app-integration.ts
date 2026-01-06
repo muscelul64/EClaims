@@ -1,7 +1,7 @@
 import { useUserStore } from '@/stores/use-user-store';
 import { Alert, Linking } from 'react-native';
 import { authApi } from './api/auth';
-import { deepLinkManager } from './deeplink';
+import { universalLinkManager } from './deeplink';
 import { ENV_CONFIG } from './environment';
 
 export interface MasterAppAuthData {
@@ -50,8 +50,8 @@ class MasterAppIntegration {
 
   private setupDeepLinkHandlers() {
     // Register handler for master app authentication callback
-    deepLinkManager.registerHandler('master-auth', {
-      pattern: 'porscheeclaims://master-auth',
+    universalLinkManager.registerHandler('master-auth', {
+pattern: 'https://*/master-auth',
       handler: this.handleMasterAppAuth.bind(this),
       requiresAuth: false,
       allowsTokenAuth: true,
@@ -59,8 +59,8 @@ class MasterAppIntegration {
     });
 
     // Register handler for master app token refresh
-    deepLinkManager.registerHandler('token-refresh', {
-      pattern: 'porscheeclaims://token-refresh',
+    universalLinkManager.registerHandler('token-refresh', {
+pattern: 'https://*/token-refresh',
       handler: this.handleTokenRefresh.bind(this),
       requiresAuth: false,
       allowsTokenAuth: true,
@@ -68,8 +68,8 @@ class MasterAppIntegration {
     });
 
     // Register handler for session sync
-    deepLinkManager.registerHandler('session-sync', {
-      pattern: 'porscheeclaims://session-sync',
+    universalLinkManager.registerHandler('session-sync', {
+pattern: 'https://*/session-sync',
       handler: this.handleSessionSync.bind(this),
       requiresAuth: false,
       allowsTokenAuth: true,
